@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>創宇新機回收管理系統｜Web V2.2.5</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+ --nav:#10385f;--nav2:#174f82;--blue:#1d66a5;--bg:#f3f6fa;--card:#fff;
+ --line:#dbe3ed;--ink:#1c2836;--muted:#6b7787;--gold:#d4a72b;
+ --ok:#0f7b58;--okbg:#e9f7f1;--warn:#9a5b00;--warnbg:#fff5e8;--danger:#b42318;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.app{display:grid;grid-template-columns:255px 1fr;min-height:100vh}
+aside{background:linear-gradient(180deg,var(--nav),var(--nav2));color:white;padding:18px 14px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 5px 17px;border-bottom:1px solid rgba(255,255,255,.13)}
+.brand img{width:84px;background:#fff;border-radius:9px;padding:5px}.brand b{display:block;font-size:16px}.brand small{opacity:.72}
+.userbox{margin:14px 0;padding:11px;border-radius:10px;background:rgba(255,255,255,.1);font-size:13px;line-height:1.55}
+.nav{width:100%;border:0;background:transparent;color:#f4f7fb;text-align:left;padding:11px 12px;border-radius:9px;margin:3px 0}
+.nav.active,.nav:hover{background:rgba(255,255,255,.14)}.version{position:absolute;bottom:16px;left:18px;right:18px;font-size:11px;opacity:.7}
+main{padding:22px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.topbar h1{margin:0;font-size:24px}.sub{font-size:12px;color:var(--muted);margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:#eef3f8;font-size:11px;font-weight:800;color:#43566d}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:13px;box-shadow:0 5px 18px rgba(22,47,76,.05)}
+.title{font-weight:900;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.field label{display:block;font-size:12px;color:#526174;font-weight:800;margin-bottom:6px}
+input,select,textarea{width:100%;border:1px solid #ccd7e4;border-radius:8px;padding:9px 10px;background:white;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#4d8bc3;box-shadow:0 0 0 3px rgba(58,123,184,.09)}
+textarea{min-height:64px}
+.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:800}.primary{background:var(--nav2);color:#fff}.gold{background:var(--gold);color:#19253b}.light{background:#edf2f7;color:#2b3b50}.danger{background:#feeceb;color:var(--danger)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.notice{padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.55}.notice.ok{background:var(--okbg);border:1px solid #b8decf;color:#116649}.notice.warn{background:var(--warnbg);border:1px solid #ecc794;color:#815000}.notice.info{background:#f2f7fc;border:1px solid #cadcec;color:#345c80}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:13px}.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.kpi span{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:23px;margin-top:4px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 8px;border-bottom:1px solid #e7ecf2;text-align:left;white-space:nowrap}th{background:#f7f9fc;color:#526174}
+.status{padding:4px 8px;border-radius:999px;font-size:11px;background:#eef3f8}.status.ok{background:#e9f7f1;color:#0f7b58}.status.warn{background:#fff5e8;color:#9a5b00}
+.gradegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.grade{border:1px solid #d3dde8;border-radius:10px;padding:11px;display:flex;gap:9px;align-items:center}.grade:has(input:checked){border-color:#4282bb;background:#edf6fd}.grade input{width:auto}
+.price-refs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.price-ref{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}.price-ref span{font-size:12px;color:var(--muted)}.price-ref b{display:block;font-size:21px;margin-top:3px;color:#174f85}
+.moneybar{display:grid;grid-template-columns:220px 1fr;border:1px solid #9bb8d3;border-radius:12px;overflow:hidden;margin-bottom:13px;background:#eef6fd}.moneybar .lbl,.moneybar .amt{display:flex;align-items:center;justify-content:center;padding:15px}.moneybar .lbl{font-weight:900;color:#174e83;border-right:1px solid #aac3d9}.moneybar .amt{font-size:30px;font-weight:900;color:#155b9d}
+.overlay{position:fixed;inset:0;background:rgba(13,31,51,.5);display:flex;align-items:center;justify-content:center;padding:20px;z-index:99}.modal{background:#fff;border-radius:16px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px}
+
+.manual-product-box{margin-top:10px;padding:12px;border:1px solid #e2c98d;background:#fff9ea;border-radius:10px}
+.mode-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.mode-card{border:1px solid #d3dde8;border-radius:9px;padding:9px 12px;background:#fff;display:flex;align-items:center;gap:7px}
+.mode-card:has(input:checked){border-color:#4282bb;background:#edf6fd}
+.mode-card input{width:auto}
+
+
+.form-preview{background:#eef2f6;padding:16px;border-radius:12px;margin-top:8px}
+.form-page{background:#fff;max-width:820px;margin:0 auto;border:1px solid #cdd7e1;padding:18px 20px;color:#111;box-shadow:0 8px 24px rgba(24,46,70,.08)}
+.fp-head{display:grid;grid-template-columns:170px 1fr 160px;align-items:start;gap:8px}
+.fp-head img{max-width:130px}.fp-head h2{text-align:center;font-size:26px;margin:5px 0}.fp-meta{text-align:right;font-size:10px;line-height:1.5}
+.fp-sec{margin-top:8px}.fp-title{background:#1d66a5;color:#fff;font-weight:900;padding:7px 10px}
+.fp-note{font-size:9px;font-weight:500;margin-left:8px}
+.fp-grid{display:grid;grid-template-columns:120px 1fr 120px 1fr;border-left:1px solid #9fb4c8;border-top:1px solid #9fb4c8}
+.fp-grid>div{padding:6px 7px;border-right:1px solid #9fb4c8;border-bottom:1px solid #9fb4c8;font-size:10px}
+.fp-grid .lab{background:#f5f8fb;font-weight:800}
+.fp-amount{display:grid;grid-template-columns:180px 1fr;border:1px solid #9fb4c8;margin-top:7px}
+.fp-amount>div{padding:10px;text-align:center}.fp-amount .lab{font-weight:900;color:#1d5f99;border-right:1px solid #9fb4c8}.fp-amount .val{font-weight:900;font-size:25px;color:#155c9e}
+.fp-inspect{padding:9px;border:1px solid #9fb4c8;border-top:0;font-size:11px}
+.fp-declare{display:grid;grid-template-columns:1fr 180px;border:1px solid #9fb4c8;border-top:0}
+.fp-declare .txt{padding:9px;font-size:9px;line-height:1.55}.fp-declare .sign{border-left:1px solid #9fb4c8;text-align:center;padding:10px;font-size:10px}
+.fp-signspace{height:80px}.fp-foot{font-size:9px;text-align:center;margin-top:10px;line-height:1.8;color:#4f5b67}
+.fp-imei-inline{display:grid;grid-template-columns:180px 1fr;gap:10px;align-items:center}
+.fp-imei-num{font-size:12px;font-weight:700;letter-spacing:.8px;word-break:break-all}
+.fp-imei-barcode svg{width:100%;max-width:320px;height:42px;display:block}
+@media(max-width:760px){.fp-head{grid-template-columns:1fr}.fp-meta{text-align:left}.fp-grid{grid-template-columns:100px 1fr}.fp-imei-inline{grid-template-columns:1fr}.fp-declare{grid-template-columns:1fr}.fp-declare .sign{border-left:0;border-top:1px solid #9fb4c8}}
+
+
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#eef4fa,#f8fafc)}
+.login-card{width:min(460px,100%);background:#fff;border:1px solid #dbe3ed;border-radius:18px;box-shadow:0 18px 50px rgba(20,50,85,.12);padding:24px}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.login-brand img{width:100px;background:#fff;border-radius:10px}
+.login-brand h1{font-size:21px;margin:0}.login-brand p{margin:4px 0 0;color:#6b7787;font-size:12px}
+.login-grid{display:grid;gap:12px}.login-actions{display:flex;gap:8px;margin-top:14px}
+.login-note{margin-top:12px;font-size:11px;color:#6b7787;line-height:1.6}
+.store-fixed{background:#f3f7fb;border:1px solid #cbd9e7;border-radius:8px;padding:9px 10px;font-weight:800;color:#174f82}
+
+
+.permission-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.permission-card{border:1px solid #d8e1ea;border-radius:12px;padding:12px;background:#fff}
+.permission-card b{display:block;margin-bottom:7px;color:#174f82}
+.permission-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.7;color:#526174}
+.edit-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:760px){.permission-grid,.edit-grid{grid-template-columns:1fr}}
+
+
+.logout-btn{width:100%;margin-top:8px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);color:#fff;border-radius:9px;padding:9px 10px;font-weight:800}
+.logout-btn:hover{background:rgba(255,255,255,.16)}
+.login-version{text-align:center;margin-top:12px;font-size:11px;color:#7b8796}
+
+
+.id-capture-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.id-card-box{border:1px solid #d6e0ea;border-radius:12px;padding:12px;background:#fbfcfe}
+.id-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.id-card-head b{font-size:14px}
+.id-state{font-size:11px;padding:4px 8px;border-radius:999px;background:#eef3f8;color:#627184}
+.id-state.done{background:#e9f7f1;color:#0f7b58}
+.id-preview{aspect-ratio:1.58/1;border:1px dashed #b8c6d5;border-radius:10px;background:#f3f6f9;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#8794a3;font-size:12px}
+.id-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.camera-layer{position:fixed;inset:0;background:rgba(8,22,38,.88);z-index:120;display:flex;align-items:center;justify-content:center;padding:18px}
+.camera-panel{width:min(720px,100%);background:#fff;border-radius:16px;padding:14px}
+.camera-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.camera-stage{position:relative;background:#111;border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+.camera-stage video{width:100%;height:100%;object-fit:cover;display:block}
+.id-guide{position:absolute;left:9%;right:9%;top:18%;bottom:18%;border:3px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.18)}
+.camera-hint{text-align:center;font-size:11px;color:#6b7787;margin:8px 0}
+.camera-actions{display:flex;gap:8px;justify-content:center}
+.camera-actions .btn{min-width:120px}
+.id-security-note{margin-top:10px}
+@media(max-width:760px){.id-capture-grid{grid-template-columns:1fr}.camera-panel{padding:10px}.camera-actions{flex-direction:column}.camera-actions .btn{width:100%}}
+
+
+.arch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.arch-box{border:1px solid #d8e1ea;border-radius:12px;background:#fff;padding:14px}
+.arch-box h3{margin:0 0 8px;font-size:15px;color:#174f82}
+.arch-box p{margin:0;color:#5d6b7a;font-size:12px;line-height:1.7}
+.codebox{background:#0f1f2f;color:#eef5fb;border-radius:10px;padding:12px;font-family:Consolas,monospace;font-size:11px;line-height:1.6;overflow:auto;white-space:pre}
+.api-table td,.api-table th{font-size:11px}
+@media(max-width:900px){.arch-grid{grid-template-columns:1fr}}
+
+@media(max-width:1100px){.grid4,.kpis{grid-template-columns:repeat(2,1fr)}.gradegrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.app{grid-template-columns:1fr}aside{display:none}main{padding:12px}.grid4,.grid3,.grid2,.kpis,.gradegrid,.price-refs{grid-template-columns:1fr}.moneybar{grid-template-columns:1fr}}
+
+.qr-flow{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.qr-panel{border:1px solid #d9e2ec;border-radius:12px;padding:14px;background:#fbfcfe}.qr-box{display:flex;align-items:center;justify-content:center;min-height:230px;background:#fff;border:1px dashed #b8c7d6;border-radius:12px}.qr-status{display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:800;font-size:13px}.dot{width:10px;height:10px;border-radius:50%;background:#a0aab5}.dot.waiting{background:#d4a72b}.dot.done{background:#0f7b58}.dot.expired{background:#b42318}.flow-steps{display:grid;gap:8px}.flow-step{display:flex;gap:10px;padding:10px;border:1px solid #e0e7ef;border-radius:10px;background:#f6f9fc}.flow-step .num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#174f82;color:#fff;font-size:12px;font-weight:900;flex:none}
+.sign-screen{min-height:100vh;background:#eef3f8;padding:18px}.sign-shell{max-width:720px;margin:auto}.sign-card{background:#fff;border:1px solid #dbe3ed;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 8px 24px rgba(20,50,85,.08)}.sign-brand{display:flex;gap:12px;align-items:center}.sign-brand img{width:92px}.sign-brand h1{margin:0;font-size:20px}.sign-brand p{margin:3px 0 0;color:#6b7787;font-size:12px}.sign-kv{display:grid;grid-template-columns:120px 1fr;border-left:1px solid #d9e2ec;border-top:1px solid #d9e2ec}.sign-kv>div{padding:8px;border-right:1px solid #d9e2ec;border-bottom:1px solid #d9e2ec;font-size:13px}.sign-kv .k{background:#f7f9fc;font-weight:800;color:#526174}
+.id-mobile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.id-mobile-box{border:1px solid #d6e0ea;border-radius:12px;padding:10px;background:#fbfcfe}.id-mobile-preview{aspect-ratio:1.58/1;border:1px dashed #b8c6d5;border-radius:9px;background:#f3f6f9;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#8794a3;font-size:12px}.id-mobile-preview img{width:100%;height:100%;object-fit:cover}.sig-pad{border:1px solid #ccd7e4;border-radius:12px;overflow:hidden;background:#fff}.sig-pad canvas{display:block;width:100%;height:190px;touch-action:none;background:#fff}.agree-row{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.5}.agree-row input{width:auto;margin-top:3px}.customer-complete{text-align:center;padding:28px 12px}.customer-complete .big{font-size:48px}@media(max-width:900px){.qr-flow,.id-mobile-grid{grid-template-columns:1fr}}
+
+.archive-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e9f7f1;color:#0f7b58;font-size:12px;font-weight:900}
+.archive-box{border:1px solid #cfe0d8;background:#f3fbf7;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6}
+.print-signature-img{max-width:135px;max-height:62px;object-fit:contain;display:block;margin:4px auto}
+
+.preview-status{font-weight:800}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.readonly-hint{font-size:12px;color:#66758a;margin-top:6px}
+
+.gradebar{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #cbd7e4;border-radius:10px;overflow:hidden;background:#fff;margin-top:8px}
+.gradebar .grade{border:0!important;border-right:1px solid #d9e2ec!important;border-radius:0!important;margin:0!important;padding:12px 8px!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px;background:#fff}
+.gradebar .grade:last-child{border-right:0!important}
+.gradebar .grade:has(input:checked){background:#eaf3fb!important;color:#10385f!important;box-shadow:inset 0 -3px 0 #1d66a5}
+.gradebar .grade input{margin-right:6px}
+@media(max-width:760px){.gradebar{grid-template-columns:1fr}.gradebar .grade{border-right:0!important;border-bottom:1px solid #d9e2ec!important}.gradebar .grade:last-child{border-bottom:0!important}}
+
+
+
+/* V2.2.4 上方欄位縮小並保持四欄同高 */
+#brand,#model,#spec,#imei{
+  height:42px!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  border-radius:8px!important;
+  font-size:inherit!important;
+}
+#brand,#model,#spec{
+  padding:0 34px 0 10px!important;
+}
+#imei{
+  padding:0 10px!important;
+}
+
+/* V2.2.5 全站圓角統一 */
+:root{--ui-radius:10px}
+input,select,textarea,
+.field input,.field select,.field textarea,
+.btn,.grade,.notice,.moneybar,.price-ref,
+.card,.archive-box,.qr-box,.flow-step,
+.pill,.logout-btn,.tab,.modal .panel,
+table{border-radius:var(--ui-radius)!important}
+</style>
+
+<style>
+/* V1.8 僅新增功能所需樣式；V1.4 原始介面 CSS 不改 */
+.connection-link{margin-top:9px;text-align:center;font-size:11px}
+.connection-link button{border:0;background:transparent;color:#1d66a5;text-decoration:underline;padding:2px}
+.inspect-mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:11px}
+.inspect-mini{border:1px solid #d8e1ea;border-radius:10px;padding:10px;background:#fbfcfe}
+.inspect-mini b{display:block;font-size:12px;color:#526174;margin-bottom:7px}
+.inspect-mini .mode-row{margin:0}
+.inspect-mini .mode-card{font-size:12px;padding:7px 9px}
+.print-sheet{display:none}
+.print-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+@media(max-width:760px){.inspect-mini-grid{grid-template-columns:1fr}}
+@media print{
+  body{background:#fff!important}
+  #setupScreen,#loginScreen,#mainApp,#cameraLayer,#overlay{display:none!important}
+  .print-sheet{display:block!important;color:#111}
+  @page{size:A4;margin:9mm}
+  .print-page{page-break-after:always}.print-page:last-child{page-break-after:auto}
+  .p-head{display:grid;grid-template-columns:145px 1fr 135px;align-items:start;gap:8px}
+  .p-head img{max-width:118px}.p-head h2{text-align:center;font-size:25px;margin:4px 0}.p-meta{text-align:right;font-size:9px;line-height:1.5}
+  .p-sec{margin-top:7px}.p-title{background:#1d66a5;color:#fff;font-weight:900;padding:6px 9px;font-size:11px}
+  .p-grid{display:grid;grid-template-columns:105px 1fr 105px 1fr;border-left:1px solid #8799aa;border-top:1px solid #8799aa}
+  .p-grid>div{padding:5px 6px;border-right:1px solid #8799aa;border-bottom:1px solid #8799aa;font-size:9px;white-space:normal}
+  .p-grid .lab{background:#f5f8fb;font-weight:800}
+  .p-imei{display:grid;grid-template-columns:155px 1fr;gap:7px;align-items:center}
+  .p-imei svg{width:100%;height:34px}
+  .p-inspect{display:grid;grid-template-columns:1fr 1fr;border-left:1px solid #8799aa;border-top:1px solid #8799aa}
+  .p-inspect>div{padding:5px 6px;border-right:1px solid #8799aa;border-bottom:1px solid #8799aa;font-size:9px}
+  .p-declare{display:grid;grid-template-columns:1fr 155px;border:1px solid #8799aa;border-top:0}
+  .p-declare .txt{padding:8px;font-size:8.5px;line-height:1.5}.p-declare .sign{border-left:1px solid #8799aa;text-align:center;padding:8px;font-size:9px}
+  .p-signspace{height:70px}.p-foot{font-size:8.5px;text-align:center;margin-top:8px;line-height:1.65;color:#4f5b67}
+  .id-print-grid{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:12mm}.id-print-box{border:1px solid #333;padding:5mm}.id-print-box h3{text-align:center;margin:0 0 4mm;font-size:13px}.id-print-box img{width:100%;height:auto;display:block}.id-print-note{text-align:center;font-size:9px;margin-top:7mm}
+}
+</style>
+
+</head>
+<body>
+<div id="customerSignScreen" class="sign-screen hidden"><div class="sign-shell">
+<div class="sign-card"><div class="sign-brand"><img src="data:image/jpeg;base64,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1AmjBeUkYm7XwIq+dFAyRUt9SRiyXOmcxFTSRIMlVOjeBugAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/2Q=="><div><h1>商品回收電子簽署</h1><p>創宇數位科技有限公司｜V2.2.5</p></div></div><div id="signSessionStatus" class="notice info" style="margin-top:12px">正在讀取交易資料…</div></div>
+<div id="customerSignForm" class="hidden">
+<div class="sign-card"><div class="title">交易資料確認</div><div class="sign-kv" id="customerTxnSummary"></div></div>
+<div class="sign-card"><div class="title">身分證件拍攝</div><div class="notice info">請使用手機相機拍攝身分證正反面。證件影像會與本次電子回收文件關聯保存；紙本 V2.3 列印時不會印出證件。</div><div class="id-mobile-grid" style="margin-top:10px"><div class="id-mobile-box"><b>身分證正面</b><div class="id-mobile-preview" id="customerFrontPreview" style="margin-top:8px">尚未拍攝</div><input id="customerFrontInput" type="file" accept="image/*" capture="environment" style="margin-top:8px"></div><div class="id-mobile-box"><b>身分證反面</b><div class="id-mobile-preview" id="customerBackPreview" style="margin-top:8px">尚未拍攝</div><input id="customerBackInput" type="file" accept="image/*" capture="environment" style="margin-top:8px"></div></div></div>
+<div class="sign-card"><div class="title">V2.3 商品買賣切結書</div><div id="customerV23Text" style="font-size:13px;line-height:1.75;max-height:320px;overflow:auto;border:1px solid #e0e6ed;border-radius:10px;padding:12px;background:#fbfcfe"></div></div>
+<div class="sign-card"><div class="title">立書人親簽</div><div class="sig-pad"><canvas id="signatureCanvas"></canvas></div><div class="actions" style="margin-top:8px"><button class="btn light" id="clearSignatureBtn">清除簽名</button></div><label class="agree-row" style="margin-top:12px"><input type="checkbox" id="agreeV23"><span>本人確認本次交易資料、回收金額及商品狀態，並已詳閱且同意 V2.3 商品買賣切結書。</span></label><button class="btn primary" id="submitCustomerSignBtn" style="width:100%;margin-top:12px">確認並完成電子簽署</button></div>
+</div><div id="customerComplete" class="sign-card customer-complete hidden"><div class="big">✓</div><h2>電子簽署已完成</h2><p>請將手機畫面交回門市人員確認。</p><div class="sub" id="customerCompleteNo"></div></div></div></div>
+<div id="setupScreen" class="login-screen hidden" style="display:none!important">
+  <div class="login-card">
+    <div class="login-brand">
+      <img src="data:image/jpeg;base64,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1AmjBeUkYm7XwIq+dFAyRUt9SRiyXOmcxFTSRIMlVOjeBugAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/2Q==" alt="創宇通訊">
+      <div><h1>Supabase 連線設定</h1><p>V2.1 第一次連線</p></div>
+    </div>
+    <div class="login-grid">
+      <div class="field"><label>Project URL</label><input id="setupUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div class="field"><label>Publishable Key</label><input id="setupKey" placeholder="sb_publishable_..."></div>
+    </div>
+    <div class="login-actions">
+      <button class="btn primary" id="setupSaveBtn" style="flex:1">儲存並測試連線</button>
+      <button class="btn light" id="setupClearBtn">清除</button>
+    </div>
+    <div id="setupMsg" class="login-note">只使用 Publishable Key；請勿輸入 Secret / service_role key。</div>
+  </div>
+</div>
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <img id="loginLogo" src="" alt="創宇通訊">
+      <div>
+        <h1>新機回收管理系統</h1>
+        <p>門市人員登入</p>
+      </div>
+    </div>
+    <div class="login-grid">
+      <div class="field"><label>員工編號／登入帳號</label><input id="loginEmpNo" placeholder="例如：0383"></div>
+      <div class="field"><label>密碼</label><input id="loginPassword" type="password" placeholder="例如：0383"></div>
+      <div class="field"><label>本次回收門市</label><select id="loginStoreSelect"></select></div>
+    </div>
+    <div class="login-actions"><button class="btn primary" id="loginBtn" style="width:100%">登入系統</button></div>
+    <div class="login-note">登入規則：員工編號＝登入帳號＝密碼，例如 0383／0383。登入時先選擇本次回收門市，進入主回收頁後將直接帶入，不需再次選擇。</div><div class="login-version">Web V2.2.5｜Supabase Cloud</div>
+  </div>
+</div>
+
+<div class="app hidden" id="mainApp">
+<aside>
+  <div class="brand"><img src="data:image/jpeg;base64,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1AmjBeUkYm7XwIq+dFAyRUt9SRiyXOmcxFTSRIMlVOjeBugAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/2Q==" alt=""><div><b>新機回收管理系統</b><small>Web V2.2.5</small></div></div>
+  <div class="userbox"><b id="loginName">尚未登入</b><br><span id="loginStore">尚未選擇門市</span><br><small>Supabase Cloud</small></div>
+  <button class="logout-btn hidden" id="logoutBtn">登出帳號</button>
+  <button class="nav active" data-page="create">建立回收單</button>
+  <button class="nav" data-page="records">回收紀錄</button>
+  <button class="nav" data-page="prices">價格管理</button>
+  <button class="nav" data-page="users">人員／權限管理</button>
+  <button class="nav" data-page="stores">門市主檔</button>
+  <div class="version">V1.4 原版介面<br>Supabase 正式資料模式</div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div><h1 id="pageTitle">建立回收單</h1><div class="sub">V1.4 原版介面｜ABCD 商品檢測</div></div>
+    <span class="pill">Supabase 中央系統</span>
+  </div>
+
+  <section id="page-create">
+    <div class="card">
+      <div class="title"><span>一、交易資料</span></div>
+      <div class="grid4">
+        <div class="field"><label>分店名稱</label><div id="storeDisplay" class="store-fixed">尚未登入</div><input id="store" type="hidden" value=""></div>
+        <div class="field"><label>承辦人員</label><input id="clerk" value="陶金詩"></div>
+        <div class="field"><label>製單編號</label><input id="docNo" value="RC20260811-0001" readonly></div>
+        <div class="field"><label>買受日期</label><input id="buyDate" type="date" value="2026-08-11"></div>
+        <div class="field" style="grid-column:span 4">
+          <label>商品來源</label>
+          <div class="mode-row">
+            <label class="mode-card"><input type="radio" name="productMode" value="existing" checked> 選擇系統既有商品</label>
+            <label class="mode-card"><input type="radio" name="productMode" value="manual"> 系統沒有商品，手動輸入</label>
+          </div>
+          <div class="notice info">※ 切換商品來源、變更商品或切換 A/B/C/D 時，系統會自動清空「商品輸入內容／本次實際回收金額」，避免沿用上一筆資料。</div>
+        </div>
+
+        <div id="existingProductFields" style="grid-column:span 3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px">
+          <div class="field"><label>品牌</label><select id="brand"><option>Apple</option><option>Samsung</option></select></div>
+          <div class="field"><label>型號</label><select id="model"><option>iPhone 17</option><option>iPhone 17 Pro</option><option>Galaxy S26</option></select></div>
+          <div class="field"><label>容量 / 規格</label><select id="spec"><option>256GB/5G</option><option>512GB/5G</option></select></div>
+        </div>
+        <div class="field"><label>IMEI / S/N</label><input id="imei" placeholder="掃描或輸入 IMEI"></div>
+
+        <div id="manualProductFields" class="manual-product-box hidden" style="grid-column:span 4">
+          <div class="grid4">
+            <div class="field"><label>手動品牌</label><input id="manualBrand" placeholder="例如：Google"></div>
+            <div class="field"><label>手動型號</label><input id="manualModel" placeholder="例如：Pixel 10 Pro"></div>
+            <div class="field"><label>手動容量 / 規格</label><input id="manualSpec" placeholder="例如：256GB / 5G"></div>
+            <div class="field"><label>商品備註</label><input id="manualProductNote" placeholder="顏色 / 特殊版本等"></div>
+          </div>
+          <div class="notice warn" style="margin-top:8px">此商品不在系統主檔內，正式版會保存為「手動商品」交易紀錄，但不會自動新增到商品主檔。</div>
+        </div>
+        <div class="field"><label>客戶姓名</label><input id="customer" value="鍾凱旋"></div>
+        <div class="field"><label>身分證字號</label><input id="customerId" value="N124255965"></div>
+        <div class="field"><label>聯絡電話</label><input id="phone" value="0978151219"></div>
+        <div class="field"><label>買受原因</label><input value="進貨" readonly></div>
+        <div class="field" style="grid-column:span 4"><label>地址</label><input id="address" value="桃園市平鎮區大勇街80-1號3樓"></div>
+      </div>
+      <div id="imeiNotice" class="notice info" style="margin-top:10px">IMEI 會即時檢查 Supabase 全公司回收紀錄。</div>
+    </div>
+
+    
+    <div class="card">
+      <div class="title">二、商品檢測結果與自動計價</div>
+
+      <div class="gradebar">
+        <label class="grade"><input type="radio" name="grade" value="A 全新機" checked> A 全新機</label>
+        <label class="grade"><input type="radio" name="grade" value="B 盒損新機"> B 盒損新機</label>
+        <label class="grade"><input type="radio" name="grade" value="C 保期不足"> C 保期不足</label>
+        <label class="grade"><input type="radio" name="grade" value="D 已拆封未啟用"> D 已拆封未啟用</label>
+        <label class="grade"><input type="radio" name="grade" value="E 複合狀況（含 B/C/D 任兩項以上）"> E 複合狀況</label>
+      </div>
+
+      <div class="price-refs">
+        <div class="price-ref"><span>今日新機參考價</span><b id="newPrice">NT$ 21,200</b></div>
+        <div class="price-ref"><span>二手最高參考價</span><b id="usedPrice">NT$ 18,500</b></div>
+      </div>
+
+      <div class="notice info" style="margin-top:10px">A：直接帶入新機金額｜B：新機金額 -5%｜C：新機金額 -10%｜D：新機金額 -20%｜E：直接帶入二手機最高價。門市仍可手動覆蓋實際回收金額。</div>
+
+      <div class="grid2" style="margin-top:10px">
+        <div class="field">
+          <label>系統建議回收金額</label>
+          <input id="suggestedAmount" type="text" readonly placeholder="待選擇商品與檢測結果">
+          <div class="readonly-hint">依 A/B/C/D/E 自動帶入，僅供門市快速判斷。</div>
+        </div>
+        <div class="field">
+          <label>本次實際回收金額（可手動覆蓋）</label>
+          <input id="manualAmount" type="number" min="0" step="1" placeholder="可沿用系統建議，或手動輸入最終成交金額">
+          <div class="readonly-hint">正式回收單會以這裡的金額為準。</div>
+        </div>
+      </div>
+
+      <div id="pricingFormula" class="notice info" style="margin-top:10px">請先選擇商品與檢測等級。</div>
+      <div id="inspectionGrid" class="hidden"></div>
+      <div class="moneybar"><div class="lbl">本次回收金額</div><div class="amt" id="amount">待輸入</div></div>
+    </div>
+
+    <div class="card" id="previewSection">
+      <div class="title"><span>三、預覽 V2.3 切結書</span><span class="pill">STEP 3</span></div>
+      <div class="notice info">請先預覽完整切結書，確認姓名、身分證字號、商品、IMEI、檢測結果與回收金額都正確，再進行客戶 QR 電子簽署。</div>
+      <div id="previewStateBox" class="notice warn preview-status" style="margin-top:10px">尚未預覽，請先按下「預覽完整切結書」。</div>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn gold" id="previewBtn">預覽完整切結書</button>
+      </div>
+    </div>
+
+    <div class="card" id="qrSignSection">
+      <div class="title"><span>四、客戶 QR Code 電子簽署</span><span class="pill">STEP 4</span></div>
+      <div class="notice info">完成 V2.3 預覽後才可產生 QR Code。若預覽後又修改了商品、IMEI、檢測結果、金額或客戶資料，系統會要求重新預覽，原 QR 也會失效。</div>
+      <div class="qr-flow" style="margin-top:12px">
+        <div class="qr-panel">
+          <div class="actions"><button class="btn primary" id="createQrBtn" disabled>請先預覽切結書</button><button class="btn light hidden" id="cancelQrBtn">取消本次 QR</button></div>
+          <div class="qr-box" id="qrCodeBox" style="margin-top:10px"><span class="sub">尚未產生 QR Code</span></div>
+          <div class="qr-status"><span class="dot" id="qrStatusDot"></span><span id="qrStatusText">尚未建立簽署工作階段</span></div>
+          <div class="sub" id="qrExpireText"></div><div id="archiveStatusBox" class="archive-box hidden" style="margin-top:10px">電子留存狀態：<b id="archiveStatusText">尚未建立</b></div>
+        </div>
+        <div class="flow-steps">
+          <div class="flow-step"><span class="num">1</span><div><b>門市建立交易資料</b><br><span class="sub">商品、IMEI、客戶資料與參考價格。</span></div></div>
+          <div class="flow-step"><span class="num">2</span><div><b>預覽 V2.3 切結書</b><br><span class="sub">門市先確認內容無誤。</span></div></div>
+          <div class="flow-step"><span class="num">3</span><div><b>客戶掃 QR 完成簽署</b><br><span class="sub">拍證件、閱讀 V2.3、手寫簽名。</span></div></div>
+          <div class="flow-step"><span class="num">4</span><div><b>門市完成回收單</b><br><span class="sub">簽署完成後建立正式回收單並電子留存。</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="saveBtn">建立回收單</button>
+      <button class="btn light hidden" id="printBtn">列印 V2.3 切結書</button>
+      <button class="btn light" id="clearBtn">清空</button>
+    </div>
+  </section>
+
+  <section id="page-records" class="hidden">
+    <div class="card">
+      <div class="title">回收紀錄</div>
+      <div class="grid4">
+        <div class="field"><label>關鍵字</label><input id="q" placeholder="單號 / IMEI / 姓名 / 電話"></div>
+        <div class="field"><label>門市</label><select id="recordStore"><option>全部門市</option><option>台北光華</option><option>桃園站前</option><option>桃園NOVA</option><option>中壢旗艦</option><option>中壢站前</option><option>中壢NOVA</option><option>新竹站前</option><option>台中站前</option><option>台中NOVA</option><option>彰化站前</option><option>台南站前</option><option>高雄建國</option></select></div>
+        <div class="field"><label>開始日期</label><input type="date" value="2026-08-01"></div>
+        <div class="field"><label>結束日期</label><input type="date" value="2026-08-11"></div>
+      </div>
+      <div class="actions" style="margin-top:10px"><button class="btn primary" id="searchBtn">查詢</button><button class="btn light">匯出 Excel</button></div>
+    </div>
+    <div class="card"><div class="tablewrap"><table><thead><tr><th>日期</th><th>製單編號</th><th>門市</th><th>商品</th><th>IMEI</th><th>客戶</th><th>檢測</th><th>金額</th><th>操作</th></tr></thead><tbody id="recordBody"></tbody></table></div></div>
+  </section>
+
+  <section id="page-prices" class="hidden">
+    <div class="card">
+      <div class="title"><span>價格管理</span><span class="pill">主管／總公司可更新</span></div>
+      <div class="notice info">這裡維護兩個「參考價格」：<b>新機參考價</b>與<b>二手最高價</b>。A 直接帶入新機價、B -5%、C -10%、D -20%、E 直接帶入二手最高價，門市仍可手動覆蓋實際成交金額。</div>
+      <div class="grid4" style="margin-top:10px">
+        <div class="field"><label>品牌</label><select id="pBrand"><option>Apple</option><option>Samsung</option></select></div>
+        <div class="field"><label>型號</label><input id="pModel" value="iPhone 17"></div>
+        <div class="field"><label>規格</label><input id="pSpec" value="256GB/5G"></div>
+        <div class="field"><label>新機參考價</label><input id="pNew" type="number" value="21200"></div>
+        <div class="field"><label>二手最高價</label><input id="pUsed" type="number" value="18500"></div>
+        <div class="field"><label>生效時間</label><input type="datetime-local" value="2026-08-11T09:00"></div>
+        <div class="field"><label>價格版本</label><input id="pVersion" value="V2026.08.11"></div>
+        <div class="field"><label>異動原因</label><input value="市場價格調整"></div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+  <button class="btn primary" id="publishBtn">更新價格</button>
+  <button class="btn light" id="importPriceBtn">Excel / CSV 批次匯入</button>
+  <button class="btn light" id="downloadPriceTemplateBtn">下載 CSV 範本</button>
+  <input id="priceImportFile" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+</div>
+<div id="priceImportResult" style="margin-top:10px"></div>
+    </div>
+    <div class="card"><div class="tablewrap"><table><thead><tr><th>品牌</th><th>型號</th><th>規格</th><th>新機參考價</th><th>二手最高價</th><th>版本</th><th>生效時間</th></tr></thead><tbody id="priceBody"></tbody></table></div></div>
+  </section>
+
+  
+  
+
+<section id="page-users" class="hidden">
+  <div class="card">
+    <div class="title"><span>門市人員帳號</span><span class="pill">員工編號＝帳號＝密碼</span></div>
+    <div class="notice info">
+      員工編號作為唯一識別，登入帳號與密碼皆使用員工編號。現有人員可直接修改「姓名、權限、狀態」，不用刪除重建。
+    </div>
+
+    <div class="permission-grid">
+      <div class="permission-card">
+        <b>門市人員</b>
+        <ul>
+          <li>登入並選擇回收門市</li>
+          <li>建立回收單</li>
+          <li>預覽完整切結書</li>
+          <li>查看自己建立的回收紀錄</li>
+          <li>不可修改價格、帳號、門市</li>
+        </ul>
+      </div>
+      <div class="permission-card">
+        <b>門市主管</b>
+        <ul>
+          <li>包含門市人員全部功能</li>
+          <li>可查完整回收紀錄</li>
+          <li>可新增／編輯／停用人員</li>
+          <li>可調整人員權限</li>
+          <li>可升級為總公司管理員</li>
+          <li>可更新新機參考價／二手最高價</li>
+          <li>可維護門市主檔</li>
+        </ul>
+      </div>
+      <div class="permission-card">
+        <b>總公司管理員</b>
+        <ul>
+          <li>查詢全部回收紀錄</li>
+          <li>更新新機參考價／二手最高價</li>
+          <li>新增／編輯／停用人員帳號</li>
+          <li>批次匯入舊人員資料</li>
+          <li>新增／改名／停用門市</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title">新增／設定門市人員</div>
+    <div class="grid4">
+      <div class="field"><label>員工編號</label><input id="uEmpNo" placeholder="例如 0383"></div>
+      <div class="field"><label>姓名</label><input id="uName" placeholder="例如 王小明"></div>
+      <div class="field"><label>權限</label><select id="uRole"><option>門市人員</option><option>門市主管</option><option>總公司管理員</option></select></div>
+      <div class="field"><label>狀態</label><select id="uStatus"><option>啟用</option><option>停用</option></select></div>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn primary" id="addUserBtn">新增／設定門市人員</button>
+      <button class="btn light" id="downloadTemplateBtn">下載匯入範本</button>
+      <button class="btn gold" id="importUsersBtn">批次匯入 CSV</button>
+      <input id="importUsersFile" type="file" accept=".csv" class="hidden">
+      <button class="btn light" id="importLogBtn">匯入紀錄</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title">帳號清單</div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>員工編號</th><th>姓名</th><th>權限</th><th>狀態</th><th>來源</th><th>操作</th></tr></thead>
+        <tbody id="userBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  </section>
+
+
+
+
+<section id="page-stores" class="hidden">
+  <div class="card">
+    <div class="title"><span>門市主檔</span><span class="pill">登入頁門市清單來源</span></div>
+    <div class="notice info" style="margin-bottom:12px">
+      新增門市、門市改名、啟用／停用都在這裡維護。登入頁只顯示「啟用」中的門市。
+    </div>
+    <div class="grid3">
+      <div class="field"><label>門市名稱</label><input id="sName" placeholder="例如 台北光華"></div>
+      <div class="field"><label>門市代碼</label><input id="sCode" placeholder="例如 TP01"></div>
+      <div class="field"><label>狀態</label><select id="sStatus"><option>啟用</option><option>停用</option></select></div>
+    </div>
+    <div class="actions" style="margin-top:12px"><button class="btn primary" id="addStoreBtn">新增門市</button></div>
+  </div>
+
+  <div class="card">
+    <div class="title">現有門市</div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>門市代碼</th><th>門市名稱</th><th>狀態</th><th>操作</th></tr></thead>
+        <tbody id="storeBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+
+
+</main>
+</div>
+
+
+
+<div id="printSheet" class="print-sheet"></div>
+
+<div id="cameraLayer" class="camera-layer hidden">
+  <div class="camera-panel">
+    <div class="camera-title">
+      <b id="cameraTitle">拍攝身分證</b>
+      <button class="btn light" id="closeCameraBtn" type="button">關閉</button>
+    </div>
+    <div class="camera-stage">
+      <video id="cameraVideo" playsinline autoplay muted></video>
+      <div class="id-guide"></div>
+    </div>
+    <div class="camera-hint">請將證件完整放入白色框線內，避免反光、模糊或裁切。</div>
+    <div class="camera-actions">
+      <button class="btn primary" id="takePhotoBtn" type="button">拍攝</button>
+    </div>
+    <canvas id="cameraCanvas" class="hidden"></canvas>
+  </div>
+</div>
+
+<div id="overlay" class="overlay hidden"><div class="modal"><h3 id="modalTitle">預覽</h3><div id="modalBody"></div><div class="actions" style="margin-top:14px"><button class="btn primary" id="closeModal">關閉</button></div></div></div>
+
+
+<script>
+const $=id=>document.getElementById(id);
+const money=n=>n==null||n===""?'—':'NT$ '+Number(n).toLocaleString('zh-TW');
+const URL_KEY='smartmobile_supabase_url';
+const PUB_KEY='smartmobile_supabase_publishable_key';
+const EMBEDDED_SUPABASE_URL='https://zbmesuwyhbdmyyywkadi.supabase.co';
+const EMBEDDED_SUPABASE_KEY='sb_publishable_ADJ4Kz4t-96EeUkLVEhn7Q_TLveAriq';
+let sb=null,currentUser=null,currentStore=null,products=[],prices=[],idPhotos={front:null,back:null},cameraStream=null,cameraSide=null,lastCreatedRecordNo=null,previewConfirmed=false,previewHash='';
+
+const ROLE_LABEL={store_staff:'門市人員',store_manager:'門市主管',hq_admin:'總公司管理員'};
+const ROLE_CODE={'門市人員':'store_staff','門市主管':'store_manager','總公司管理員':'hq_admin'};
+const STATUS_LABEL={active:'啟用',disabled:'停用'};
+const STATUS_CODE={'啟用':'active','停用':'disabled'};
+
+const inspectionDefinitions=[
+ {key:'frame',label:'邊框刮傷情況',options:['完好無傷','輕微刮傷','明顯刮傷']},
+ {key:'back',label:'背蓋刮傷（含鏡頭外框）',options:['完好無傷','輕微刮傷','明顯刮傷']},
+ {key:'display',label:'觸控面板 / 液晶顯示',options:['完好無傷且顯示正常','有刮傷但顯示正常','顯示異常']},
+ {key:'country',label:'手機販售國家',options:['台版','美版','日版','其他']},
+ {key:'front_camera',label:'前鏡頭',options:['正常','異常']},
+ {key:'rear_camera',label:'後鏡頭',options:['正常','異常']},
+ {key:'battery',label:'電池健康度',options:['91% ~ 100%','81% ~ 90%','80% 以下','不適用']},
+ {key:'restart',label:'是否自動開關機',options:['不會自動開關機','會自動開關機']},
+ {key:'biometric',label:'指紋 / 臉部辨識',options:['正常','異常','不適用']},
+ {key:'other',label:'其他備註',options:['無','其他']}
+];
+let inspectionResults={
+ frame:'完好無傷',back:'完好無傷',display:'完好無傷且顯示正常',country:'台版',
+ front_camera:'正常',rear_camera:'正常',battery:'91% ~ 100%',restart:'不會自動開關機',biometric:'正常',other:'無',other_text:''
+};
+
+function internalEmail(emp){return `${String(emp).trim()}@smartmobile.internal`}
+function modal(title,html){$('modalTitle').textContent=title;$('modalBody').innerHTML=html;$('overlay').classList.remove('hidden')}
+function closeModal(){$('overlay').classList.add('hidden')}
+
+async function makeClient(url,key){ sb=supabase.createClient(url,key); return sb }
+async function testConnection(url,key){
+ const c=supabase.createClient(url,key);
+ const {error}=await c.from('stores').select('id').limit(1);
+ if(error) throw error;
+}
+async function boot(){
+ try{
+   await makeClient(EMBEDDED_SUPABASE_URL,EMBEDDED_SUPABASE_KEY);
+   await populateLoginStores();
+   $('setupScreen')?.classList.add('hidden');
+   $('loginScreen').classList.remove('hidden');
+ }catch(e){
+   $('setupScreen')?.classList.add('hidden');
+   $('loginScreen').classList.remove('hidden');
+   modal('Supabase 連線失敗',`<div class="notice warn">${e.message||e}</div>`);
+ }
+}
+async function saveSetup(){
+ const url=$('setupUrl').value.trim(),key=$('setupKey').value.trim();
+ if(!url||!key){$('setupMsg').textContent='請完整填寫 Project URL 與 Publishable Key。';return}
+ $('setupMsg').textContent='正在測試連線…';
+ try{
+   await testConnection(url,key);
+   localStorage.setItem(URL_KEY,url);localStorage.setItem(PUB_KEY,key);
+   await makeClient(url,key);await populateLoginStores();
+   $('setupMsg').textContent='✓ 連線成功';
+   setTimeout(()=>{$('setupScreen').classList.add('hidden');$('loginScreen').classList.remove('hidden')},250);
+ }catch(e){$('setupMsg').textContent='連線失敗：'+(e.message||e)}
+}
+function clearSetup(){localStorage.removeItem(URL_KEY);localStorage.removeItem(PUB_KEY);$('setupUrl').value='';$('setupKey').value='';$('setupMsg').textContent='連線設定已清除。'}
+async function openSetup(){
+ if(sb) try{await sb.auth.signOut()}catch(e){}
+ currentUser=null;currentStore=null;resetCurrentOrder();
+ $('mainApp').classList.add('hidden');$('loginScreen').classList.add('hidden');$('setupScreen').classList.remove('hidden');
+ $('setupUrl').value=localStorage.getItem(URL_KEY)||'';$('setupKey').value=localStorage.getItem(PUB_KEY)||'';
+}
+
+async function populateLoginStores(){
+ const {data,error}=await sb.from('stores').select('id,store_code,store_name,status').eq('status','active').order('store_name');
+ if(error) throw error;
+ $('loginStoreSelect').innerHTML=(data||[]).map(s=>`<option value="${s.id}">${s.store_name}</option>`).join('');
+ $('recordStore').innerHTML='<option value="">全部門市</option>'+(data||[]).map(s=>`<option value="${s.id}">${s.store_name}</option>`).join('');
+}
+async function login(){
+ const emp=$('loginEmpNo').value.trim(),pwd=$('loginPassword').value,storeId=$('loginStoreSelect').value;
+ if(!emp||!pwd||!storeId)return modal('登入資料未完成','<div class="notice warn">請輸入員工編號、密碼並選擇門市。</div>');
+ const {data,error}=await sb.auth.signInWithPassword({email:internalEmail(emp),password:pwd});
+ if(error)return modal('登入失敗',`<div class="notice warn">${error.message}</div>`);
+ const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',data.user.id).single();
+ if(pe||!profile||profile.status!=='active'){await sb.auth.signOut();return modal('登入失敗','<div class="notice warn">帳號未建立於 profiles 或目前已停用。</div>')}
+ const {data:store,error:se}=await sb.from('stores').select('*').eq('id',storeId).single();
+ if(se)return modal('門市資料錯誤',`<div class="notice warn">${se.message}</div>`);
+ currentUser=profile;currentStore=store;
+ $('loginName').textContent=`${profile.name}｜${profile.employee_no}`;
+ $('loginStore').textContent=store.store_name;
+ $('store').value=store.store_name;$('storeDisplay').textContent=store.store_name;$('clerk').value=profile.name;
+ $('logoutBtn').classList.remove('hidden');
+ 
+ applyRole();
+ $('loginScreen').classList.add('hidden');$('mainApp').classList.remove('hidden');
+ await Promise.all([loadProducts(),loadPrices()]);
+ newDocNo();
+ showPage('create');
+}
+async function logout(){
+ resetCurrentOrder();
+ if(sb)await sb.auth.signOut();
+ currentUser=null;currentStore=null;
+ $('mainApp').classList.add('hidden');$('loginScreen').classList.remove('hidden');
+ $('loginName').textContent='尚未登入';$('loginStore').textContent='尚未選擇門市';$('logoutBtn').classList.add('hidden');
+}
+function applyRole(){
+ const manager=currentUser && ['store_manager','hq_admin'].includes(currentUser.role);
+ document.querySelectorAll('.nav[data-page="prices"],.nav[data-page="users"],.nav[data-page="stores"]').forEach(x=>x.classList.toggle('hidden',!manager));
+}
+function showPage(name){
+ document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+ $('page-'+name)?.classList.remove('hidden');
+ document.querySelectorAll('.nav[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
+ $('pageTitle').textContent={create:'建立回收單',records:'回收紀錄',prices:'價格管理',users:'人員／權限管理',stores:'門市主檔'}[name]||'新機回收管理系統';
+ if(name==='records')loadRecords();if(name==='prices')renderPrices();if(name==='users')loadUsers();if(name==='stores')loadStoresAdmin();
+}
+function newDocNo(){
+ const d=new Date(),pad=n=>String(n).padStart(2,'0');
+ $('docNo').value=`RC${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${String(Date.now()).slice(-6)}`;
+ $('buyDate').value=d.toISOString().slice(0,10);
+}
+
+async function loadProducts(){
+ const {data,error}=await sb.from('products').select('*').eq('status','active').order('brand').order('model').order('spec');
+ if(error)return modal('商品讀取失敗',`<div class="notice warn">${error.message}</div>`);
+ products=data||[];populateProductSelects();
+}
+function populateProductSelects(){
+ const brands=[...new Set(products.map(p=>p.brand))];
+ $('brand').innerHTML=brands.map(x=>`<option>${x}</option>`).join('');
+ populateModels();
+}
+function populateModels(){
+ const b=$('brand').value,models=[...new Set(products.filter(p=>p.brand===b).map(p=>p.model))];
+ $('model').innerHTML=models.map(x=>`<option>${x}</option>`).join('');populateSpecs();
+}
+function populateSpecs(){
+ const b=$('brand').value,m=$('model').value,specs=[...new Set(products.filter(p=>p.brand===b&&p.model===m).map(p=>p.spec||''))];
+ $('spec').innerHTML=specs.map(x=>`<option>${x}</option>`).join('');updatePriceDisplay();
+}
+function selectedProduct(){return products.find(p=>p.brand===$('brand').value&&p.model===$('model').value&&(p.spec||'')===$('spec').value)}
+async function loadPrices(){
+ const {data,error}=await sb.from('latest_product_prices').select('*');
+ if(error)return modal('價格讀取失敗',`<div class="notice warn">${error.message}</div>`);
+ prices=data||[];updatePriceDisplay();renderPrices();
+}
+function currentPrice(){const p=selectedProduct();return p?prices.find(x=>x.product_id===p.id):null}
+function productMode(){return document.querySelector('input[name="productMode"]:checked')?.value||'existing'}
+function grade(){return document.querySelector('input[name="grade"]:checked')?.value||'A 全新機'}
+function gradeCode(){return grade().charAt(0)}
+function currentProductName(){
+ if(productMode()==='manual')return [$('manualBrand').value.trim(),$('manualModel').value.trim(),$('manualSpec').value.trim()].filter(Boolean).join(' ')+($('manualProductNote').value.trim()?`｜${$('manualProductNote').value.trim()}`:'');
+ return [$('brand').value,$('model').value,$('spec').value].filter(Boolean).join(' ');
+}
+function currentAmount(){return Number($('manualAmount').value||0)}
+function currentSuggestedAmount(){
+ if(productMode()==='manual')return 0;
+ const pr=currentPrice()||{},newPrice=Number(pr.new_price||0),usedHigh=Number(pr.used_high_price||0);
+ switch(gradeCode()){
+  case 'A': return newPrice;
+  case 'B': return newPrice?Math.round(newPrice*0.95):0;
+  case 'C': return newPrice?Math.round(newPrice*0.90):0;
+  case 'D': return newPrice?Math.round(newPrice*0.80):0;
+  case 'E': return usedHigh;
+  default: return 0;
+ }
+}
+function currentFormulaText(){
+ if(productMode()==='manual')return '手動商品無系統參考價，請門市直接輸入實際回收金額。';
+ const pr=currentPrice()||{},newPrice=Number(pr.new_price||0),usedHigh=Number(pr.used_high_price||0);
+ switch(gradeCode()){
+  case 'A': return newPrice?`A 全新機：直接帶入新機金額 ${money(newPrice)}`:'A 全新機：目前無新機參考價';
+  case 'B': return newPrice?`B 盒損新機：${money(newPrice)} × 95% ＝ ${money(Math.round(newPrice*0.95))}`:'B 盒損新機：目前無新機參考價';
+  case 'C': return newPrice?`C 保期不足：${money(newPrice)} × 90% ＝ ${money(Math.round(newPrice*0.90))}`:'C 保期不足：目前無新機參考價';
+  case 'D': return newPrice?`D 已拆封未啟用：${money(newPrice)} × 80% ＝ ${money(Math.round(newPrice*0.80))}`:'D 已拆封未啟用：目前無新機參考價';
+  case 'E': return usedHigh?`E 複合狀況：直接帶入二手機最高價 ${money(usedHigh)}`:'E 複合狀況：目前無二手最高價';
+  default: return '請先選擇商品檢測結果';
+ }
+}
+function buildPreviewHash(){
+ return JSON.stringify({
+  productMode:productMode(),
+  product:currentProductName(),
+  imei:$('imei').value.trim(),
+  grade:grade(),
+  amount:currentAmount(),
+  customer:$('customer').value.trim(),
+  customerId:$('customerId').value.trim(),
+  phone:$('phone').value.trim(),
+  address:$('address').value.trim(),
+  buyDate:$('buyDate').value.trim()
+ });
+}
+function updatePreviewUi(msg=''){
+ const box=$('previewStateBox'),btn=$('createQrBtn');
+ if(previewConfirmed){
+  box.className='notice ok preview-status';
+  box.textContent=msg||'✓ 已完成切結書預覽，可產生 QR Code 讓客戶簽署。';
+  btn.disabled=false;
+  btn.textContent='產生一次性 QR Code';
+ }else{
+  box.className='notice warn preview-status';
+  box.textContent=msg||'尚未預覽，請先按下「預覽完整切結書」。';
+  btn.disabled=true;
+  btn.textContent='請先預覽切結書';
+ }
+}
+function resetQrUi(msg='尚未產生 QR Code'){
+ if(qrPollTimer)clearInterval(qrPollTimer);
+ qrPollTimer=null;qrSession=null;
+ $('qrCodeBox').innerHTML=`<span class="sub">${msg}</span>`;
+ $('qrStatusDot').className='dot';
+ $('qrStatusText').textContent='尚未建立簽署工作階段';
+ $('qrExpireText').textContent='';
+ $('cancelQrBtn').classList.add('hidden');
+}
+async function markPreviewDirty(reason='資料已變更，請重新預覽切結書。'){
+ previewConfirmed=false;previewHash='';
+ updatePreviewUi(reason);
+ if(qrSession){
+  try{await sb.from('sign_sessions').update({status:'cancelled'}).eq('id',qrSession.id)}catch(e){}
+  resetQrUi('資料已變更，請重新預覽後再產生 QR Code');
+  $('qrStatusDot').className='dot expired';
+  $('qrStatusText').textContent='原 QR 已失效';
+ }
+ $('archiveStatusBox')?.classList.add('hidden');
+}
+function updatePriceDisplay(){
+ if(productMode()==='manual'){
+  $('newPrice').textContent='無系統報價';$('usedPrice').textContent='無系統報價';
+ }else{
+  const pr=currentPrice();$('newPrice').textContent=money(pr?.new_price);$('usedPrice').textContent=money(pr?.used_high_price);
+ }
+}
+function updateGrade(applySuggested=false){
+ updatePriceDisplay();
+ const suggested=currentSuggestedAmount();
+ $('suggestedAmount').value=suggested?money(suggested):'無系統建議';
+ if(applySuggested){$('manualAmount').value=suggested?String(suggested):''}
+ const actual=Number($('manualAmount').value||0);
+ $('amount').textContent=actual?money(actual):'待輸入';
+ const formula=currentFormulaText();
+ if(!suggested && productMode()!=='manual'){
+  $('pricingFormula').className='notice warn';
+  $('pricingFormula').textContent=formula+'；請確認價格表是否已維護。';
+ }else if(productMode()==='manual'){
+  $('pricingFormula').className='notice info';
+  $('pricingFormula').textContent=formula;
+ }else if(actual && suggested && actual!==suggested){
+  $('pricingFormula').className='notice warn';
+  $('pricingFormula').textContent=`${formula}｜系統建議 ${money(suggested)}；本次實際回收金額已手動改為 ${money(actual)}。`;
+ }else{
+  $('pricingFormula').className='notice ok';
+  $('pricingFormula').textContent=`${formula}｜本次實際回收金額 ${actual?money(actual):(suggested?money(suggested):'待輸入')}`;
+ }
+}
+function updateProductMode(applySuggested=true){
+ const manual=productMode()==='manual';
+ $('existingProductFields').classList.toggle('hidden',manual);$('manualProductFields').classList.toggle('hidden',!manual);updateGrade(applySuggested);
+}
+
+async function checkImei(){
+ const imei=$('imei').value.trim();if(!imei){$('imeiNotice').className='notice info';$('imeiNotice').textContent='IMEI 會即時檢查 Supabase 全公司回收紀錄。';return}
+ const {data,error}=await sb.from('recycle_records').select('record_no').eq('imei',imei).eq('status','active').limit(1);
+ if(error){$('imeiNotice').className='notice warn';$('imeiNotice').textContent=error.message;return}
+ if(data?.length){$('imeiNotice').className='notice warn';$('imeiNotice').textContent=`⚠ 此 IMEI 已有回收紀錄：${data[0].record_no}`}
+ else{$('imeiNotice').className='notice ok';$('imeiNotice').textContent='✓ 此 IMEI 目前無重複回收紀錄'}
+}
+
+function renderInspection(){const g=$('inspectionGrid');if(g)g.innerHTML=''}
+function inspectionSnapshot(){return {grade:grade()}}
+
+function code39Map(){return {'0':'nnnwwnwnn','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw','5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn','A':'wnnnnwnnw','B':'nnwnnwnnw','C':'wnwnnwnnn','D':'nnnnwwnnw','E':'wnnnwwnnn','F':'nnwnwwnnn','G':'nnnnnwwnw','H':'wnnnnwwnn','I':'nnwnnwwnn','J':'nnnnwwwnn','K':'wnnnnnnww','L':'nnwnnnnww','M':'wnwnnnnwn','N':'nnnnwnnww','O':'wnnnwnnwn','P':'nnwnwnnwn','Q':'nnnnnnwww','R':'wnnnnnwwn','S':'nnwnnnwwn','T':'nnnnwnwwn','U':'wwnnnnnnw','V':'nwwnnnnnw','W':'wwwnnnnnn','X':'nwnnwnnnw','Y':'wwnnwnnnn','Z':'nwwnwnnnn','-':'nwnnnnwnw','.':'wwnnnnwnn',' ':'nwwnnnwnn','$':'nwnwnwnnn','/':'nwnwnnnwn','+':'nwnnnwnwn','%':'nnnwnwnwn','*':'nwnnwnwnn'}}
+function barcodeSvg(value){const map=code39Map(),raw='*'+String(value).toUpperCase().replace(/[^0-9A-Z\-\.\ \$\/\+\%]/g,'')+'*';let x=0,out='';for(const ch of raw){const pattern=map[ch]||map['*'];for(let j=0;j<pattern.length;j++){const w=pattern[j]==='w'?5:2;if(j%2===0)out+=`<rect x="${x}" y="0" width="${w}" height="54" fill="#111"/>`;x+=w}x+=2}return `<svg viewBox="0 0 ${x} 54" preserveAspectRatio="xMidYMid meet">${out}</svg>`}
+
+function declarationHtml(recordNo){
+ const customer=$('customer').value.trim()||'XXX',amt=currentAmount(),imei=$('imei').value.trim(),ins=inspectionSnapshot(),logo=document.querySelector('.brand img')?.src||'';
+ const boxes=['A 全新機','B 盒損新機','C 保期不足','D 已拆封未啟用','E 複合狀況（含 B/C/D 任兩項以上）'].map(x=>(x===grade()?'■ ':'□ ')+x).join('　');
+ const inspectRows=inspectionDefinitions.map(d=>`<div><b>${d.label}</b>　${ins[d.key]||''}</div>`).join('');
+ return `
+ <div class="form-preview"><div class="form-page">
+  <div class="fp-head"><img src="${logo}"><h2>商品買賣切結書</h2><div class="fp-meta">版本 V2.3<br>${recordNo||'預覽模式'}</div></div>
+  <div class="fp-sec"><div class="fp-title">一、交易資料</div><div class="fp-grid">
+   <div class="lab">分店名稱</div><div>${$('store').value}</div><div class="lab">承辦人員</div><div>${$('clerk').value}</div>
+   <div class="lab">製單編號</div><div>${recordNo||$('docNo').value}</div><div class="lab">商品名稱</div><div>${currentProductName()}</div>
+   <div class="lab">姓名</div><div>${customer}</div><div class="lab">身分證字號</div><div>${$('customerId').value}</div>
+   <div class="lab">聯絡電話</div><div>${$('phone').value}</div><div class="lab">地址</div><div>${$('address').value}</div>
+   <div class="lab">IMEI</div><div style="grid-column:span 3"><div class="fp-imei-inline"><div class="fp-imei-num">${imei}</div><div class="fp-imei-barcode">${barcodeSvg(imei)}</div></div></div>
+  </div><div class="fp-amount"><div class="lab">回收金額</div><div class="val">${money(amt)}</div></div></div>
+  <div class="fp-sec"><div class="fp-title">二、個人一時貿易申報資料</div><div class="fp-grid">
+   <div class="lab">申報單位統編</div><div>25166891</div><div class="lab">所得給付年度</div><div>${($('buyDate').value||'').slice(0,4)}</div>
+   <div class="lab">格式代號及所得類別</div><div>71 營利所得</div><div class="lab">製單編號</div><div>${recordNo||$('docNo').value}</div>
+   <div class="lab">所得人姓名</div><div>${customer}</div><div class="lab">所得人統編</div><div>${$('customerId').value}</div>
+   <div class="lab">所得人地址</div><div style="grid-column:span 3">${$('address').value}</div>
+   <div class="lab">買受日期</div><div>${$('buyDate').value}</div><div class="lab">買受原因</div><div>進貨</div>
+   <div class="lab">買受貨物名稱</div><div>${currentProductName()}</div><div class="lab">單價／數量</div><div>${money(amt)} ／ 1</div>
+   <div class="lab">金額</div><div>${money(amt)}</div><div class="lab">合計</div><div>${money(amt)}</div>
+   <div class="lab">申報單位</div><div>創宇數位科技有限公司</div><div class="lab">負責人</div><div>莊涵凱</div>
+   <div class="lab">地址</div><div style="grid-column:span 3">桃園市中壢區中山東路一段336-2號2樓</div>
+  </div></div>
+  <div class="fp-sec"><div class="fp-title">三、商品檢測結果</div><div class="fp-inspect"><b>${boxes}</b><br><br>本次商品狀態：${grade()}　｜　實際回收金額：${money(amt)}</div></div>
+  <div class="fp-sec"><div class="fp-title">四、切結與申報聲明 <span class="fp-note">※ 創宇數位科技有限公司以下簡稱甲方，${customer}以下簡稱乙方</span></div>
+   <div class="fp-declare"><div class="txt">
+    <b>一、商品來源保證</b><br>以上所買賣之商品，來源保證清楚，絕無不法所得。若所販售之商品涉及任何不法情事，概由乙方承擔所有法律責任。此次買賣之商品若日後遭扣押、沒收等情形，造成買受人之一切損失，概由乙方承擔所有賠償責任，並願放棄對甲方一切民事、刑事權利，恐口說無憑，特立此聲明以示證明。<br><br>
+    <b>二、個人資料蒐集</b><br>乙方同意甲方為辦理商品回收業務及其他合理關聯目的之行為，得進行本表所列之個人資料蒐集、處理及利用；甲方及合作廠商，可於營運地區範圍內，以書面或電子之方式蒐集、處理、利用乙方之個人資料，並從事合理關聯之行為，期間自簽署本聲明書起至蒐集目的完成日止。乙方知悉可自由選擇個人資料提供予甲方，惟若提供之資料不實、不完整或錯誤者，甲方有權暫停或終止使用本服務之全部或一部，如有造成甲方之損害亦應負損害賠償責任。<br><br>
+    <b>三、個人一時貿易所得申報</b><br>個人因買賣商品而取得之盈餘，得以按銷貨收入的 6% 來計算所得額，併入營利所得申報綜合所得稅。<br><br>
+    <b>四、其他</b><br>本切結書之附件構成本切結書之一部份，乙方應填寫附件資料並保證內容正確性。
+   </div><div class="sign"><b>立書人親簽</b><div class="fp-signspace"></div>__________________</div></div>
+  </div>
+  <div class="fp-foot">※本表僅限於營利事業向依法免辦營業登記，且非經買賣商品個人購買商品者使用。<br>第1聯：報核（存根）聯　申報單位存查<br>— 以上各項乙方已詳閱並同意，特立本切結書為憑 —</div>
+ </div></div>`;
+}
+function declarationSnapshotText(){
+ return `V2.3｜商品:${currentProductName()}｜IMEI:${$('imei').value.trim()}｜狀態:${grade()}｜金額:${currentAmount()}`;
+}
+function fillPrintSheet(recordNo,signatureUrl=''){
+ const customer=$('customer').value.trim(),amt=currentAmount(),imei=$('imei').value.trim(),ins=inspectionSnapshot(),logo=document.querySelector('.brand img')?.src||'';
+ $('printSheet').innerHTML=`<div class="print-page">
+ <div class="p-head"><img src="${logo}"><h2>商品買賣切結書</h2><div class="p-meta">創宇數位科技有限公司<br>版本 V2.3<br>${recordNo}</div></div>
+ <div class="p-sec"><div class="p-title">一、交易資料</div><div class="p-grid">
+ <div class="lab">分店名稱</div><div>${$('store').value}</div><div class="lab">承辦人員</div><div>${$('clerk').value}</div>
+ <div class="lab">製單編號</div><div>${recordNo}</div><div class="lab">商品名稱</div><div>${currentProductName()}</div>
+ <div class="lab">姓名</div><div>${customer}</div><div class="lab">身分證字號</div><div>${$('customerId').value}</div>
+ <div class="lab">聯絡電話</div><div>${$('phone').value}</div><div class="lab">地址</div><div>${$('address').value}</div>
+ <div class="lab">IMEI / S/N</div><div style="grid-column:span 3"><div class="p-imei"><b>${imei}</b>${barcodeSvg(imei)}</div></div>
+ </div></div>
+ <div class="p-sec"><div class="p-title">二、個人一時貿易申報資料</div><div class="p-grid">
+ <div class="lab">申報單位統編</div><div>25166891</div><div class="lab">所得給付年度</div><div>${($('buyDate').value||'').slice(0,4)}</div>
+ <div class="lab">格式代號及所得類別</div><div>71 營利所得</div><div class="lab">製單編號</div><div>${recordNo}</div>
+ <div class="lab">所得人姓名</div><div>${customer}</div><div class="lab">所得人統編</div><div>${$('customerId').value}</div>
+ <div class="lab">所得人地址</div><div style="grid-column:span 3">${$('address').value}</div>
+ <div class="lab">買受日期</div><div>${$('buyDate').value}</div><div class="lab">買受原因</div><div>進貨</div>
+ <div class="lab">買受貨物名稱</div><div>${currentProductName()}</div><div class="lab">單價／數量</div><div>${money(amt)}／1</div>
+ <div class="lab">金額</div><div>${money(amt)}</div><div class="lab">合計</div><div>${money(amt)}</div>
+ <div class="lab">申報單位</div><div>創宇數位科技有限公司</div><div class="lab">負責人</div><div>莊涵凱</div>
+ <div class="lab">地址</div><div style="grid-column:span 3">桃園市中壢區中山東路一段336-2號2樓</div>
+ </div></div>
+ <div class="p-sec"><div class="p-title">三、商品檢測結果</div><div class="p-inspect">
+ <div><b>商品狀態</b>　${grade()}</div><div><b>實際回收金額</b>　${money(amt)}</div>
+ </div></div>
+ <div class="p-sec"><div class="p-title">四、切結與申報聲明　※ 創宇數位科技有限公司以下簡稱甲方，${customer}以下簡稱乙方</div>
+ <div class="p-declare"><div class="txt">
+ <b>一、商品來源保證</b><br>以上所買賣之商品，來源保證清楚，絕無不法所得。若所販售之商品涉及任何不法情事，概由乙方承擔所有法律責任。此次買賣之商品若日後遭扣押、沒收等情形，造成買受人之一切損失，概由乙方承擔所有賠償責任，並願放棄對甲方一切民事、刑事權利，恐口說無憑，特立此聲明以示證明。<br><br>
+ <b>二、個人資料蒐集</b><br>乙方同意甲方為辦理商品回收業務及其他合理關聯目的之行為，得進行本表所列之個人資料蒐集、處理及利用；甲方及合作廠商，可於營運地區範圍內，以書面或電子之方式蒐集、處理、利用乙方之個人資料，並從事合理關聯之行為，期間自簽署本聲明書起至蒐集目的完成日止。乙方知悉可自由選擇個人資料提供予甲方，惟若提供之資料不實、不完整或錯誤者，甲方有權暫停或終止使用本服務之全部或一部，如有造成甲方之損害亦應負損害賠償責任。<br><br>
+ <b>三、個人一時貿易所得申報</b><br>個人因買賣商品而取得之盈餘，得以按銷貨收入的 6% 來計算所得額，併入營利所得申報綜合所得稅。<br><br>
+ <b>四、其他</b><br>本切結書之附件構成本切結書之一部份，乙方應填寫附件資料並保證內容正確性。
+ </div><div class="sign"><b>立書人親簽</b>${signatureUrl?`<img class="print-signature-img" src="${signatureUrl}" alt="電子簽名">`:`<div class="p-signspace"></div>`}<div>__________________</div></div></div></div>
+ <div class="p-foot">※本表僅限於營利事業向依法免辦營業登記，且非經買賣商品個人購買商品者使用。<br>第1聯：報核（存根）聯　申報單位存查<br>— 以上各項乙方已詳閱並同意，特立本切結書為憑 —</div>
+ </div>`;
+}
+
+async function createRecord(){
+ if(!currentUser||!currentStore)return modal('尚未登入','<div class="notice warn">請重新登入。</div>');
+ if(!qrSession)return modal('尚未建立 QR 簽署','<div class="notice warn">請先讓客戶完成 QR 電子簽署。</div>');const {data:sc}=await sb.from('sign_sessions').select('status').eq('id',qrSession.id).single();if(sc?.status!=='completed')return modal('客戶尚未完成','<div class="notice warn">請等待客戶完成證件拍攝與簽名。</div>');
+ if(!$('imei').value.trim()||!$('customer').value.trim()||!$('customerId').value.trim()||!$('phone').value.trim()||!$('address').value.trim())return modal('交易資料未完成','<div class="notice warn">請完成 IMEI、姓名、身分證字號、電話與地址。</div>');
+ if(productMode()==='manual'&&(!$('manualBrand').value.trim()||!$('manualModel').value.trim()))return modal('商品資料未完成','<div class="notice warn">手動商品至少需填品牌與型號。</div>');
+ if(!currentAmount())return modal('金額未輸入','<div class="notice warn">請輸入本次實際回收金額。</div>');
+ const prod=selectedProduct(),pr=currentPrice(),recordNo=$('docNo').value;
+ const row={
+  record_no:recordNo,store_id:currentStore.id,employee_id:currentUser.id,
+  store_name_snapshot:currentStore.store_name,employee_no_snapshot:currentUser.employee_no,employee_name_snapshot:currentUser.name,
+  product_id:productMode()==='manual'?null:prod?.id||null,manual_product:productMode()==='manual',
+  brand_snapshot:productMode()==='manual'?$('manualBrand').value.trim():$('brand').value,
+  model_snapshot:productMode()==='manual'?$('manualModel').value.trim():$('model').value,
+  spec_snapshot:productMode()==='manual'?$('manualSpec').value.trim():$('spec').value,
+  imei:$('imei').value.trim(),condition_code:gradeCode(),
+  new_price_snapshot:pr?.new_price??null,used_high_price_snapshot:pr?.used_high_price??null,actual_amount:currentAmount(),
+  customer_name:$('customer').value.trim(),customer_id_no:$('customerId').value.trim(),customer_phone:$('phone').value.trim(),customer_address:$('address').value.trim(),
+  buy_date:$('buyDate').value,buy_reason:'進貨',inspection_results:inspectionSnapshot(),
+  declaration_version_snapshot:'V2.3',declaration_snapshot:declarationSnapshotText(),sign_session_id:qrSession?.id||null,status:'active'
+ };
+ const {data:created,error}=await sb.from('recycle_records').insert(row).select('id,record_no').single();
+ if(error)return modal('建立失敗',`<div class="notice warn">${error.message}</div>`);
+ const archivePayload={
+   recycle_record_id:created.id,
+   sign_session_id:qrSession?.id||null,
+   record_no:recordNo,
+   document_version:'V2.3',
+   print_version:'V2.3_NO_ID',
+   transaction_snapshot:{
+     store:$('store').value,clerk:$('clerk').value,product:currentProductName(),imei:$('imei').value.trim(),
+     condition:grade(),amount:currentAmount(),customer_name:$('customer').value.trim(),customer_id_no:$('customerId').value.trim(),
+     customer_phone:$('phone').value.trim(),customer_address:$('address').value.trim(),buy_date:$('buyDate').value
+   },
+   declaration_snapshot:declarationSnapshotText(),
+   archive_status:'complete'
+ };
+ const {error:archiveError}=await sb.from('recycle_document_archives').insert(archivePayload);
+ if(archiveError)return modal('回收單已建立，但電子留存失敗',`<div class="notice warn">${archiveError.message}</div>`);
+ lastCreatedRecordNo=recordNo;$('printBtn').classList.remove('hidden');
+ $('archiveStatusBox').classList.remove('hidden');$('archiveStatusText').textContent='✓ 完整電子回收資料已留存';
+ modal('建立完成',`<div class="notice ok">✓ 正式回收單與完整電子回收資料已留存。<br>製單編號：<b>${recordNo}</b><br>紙本 V2.3 列印不包含證件影像。</div>`);
+}
+function previewDeclaration(){if(!$('imei').value.trim()||!$('customer').value.trim()||!$('customerId').value.trim()||!$('phone').value.trim()||!$('address').value.trim()||!currentProductName()||!currentAmount())return modal('資料尚未完成','<div class="notice warn">請先完成商品、IMEI、客戶基本資料與本次實際回收金額，再預覽切結書。</div>');previewHash=buildPreviewHash();previewConfirmed=true;updatePreviewUi('✓ 已完成切結書預覽，可產生 QR Code。');modal('完整 V2.3 切結書預覽',declarationHtml(lastCreatedRecordNo||$('docNo').value))}
+async function printDeclaration(){
+ if(!lastCreatedRecordNo)return modal('尚未完成回收單','<div class="notice warn">請先完成客戶電子簽署並建立正式回收單。</div>');
+ let signatureUrl='';
+ try{
+   const {data:s}=await sb.from('sign_sessions').select('signature_path').eq('id',qrSession?.id).single();
+   if(s?.signature_path){
+     const {data:signed}=await sb.storage.from('return-documents').createSignedUrl(s.signature_path,60);
+     signatureUrl=signed?.signedUrl||'';
+   }
+ }catch(e){}
+ fillPrintSheet(lastCreatedRecordNo,signatureUrl);
+ window.print();
+}
+
+async function loadRecords(){
+ let query=sb.from('recycle_records').select('*').order('created_at',{ascending:false}).limit(300);
+ const q=$('q').value.trim(),storeId=$('recordStore').value;
+ if(q)query=query.or(`record_no.ilike.%${q}%,imei.ilike.%${q}%,customer_name.ilike.%${q}%,customer_phone.ilike.%${q}%`);
+ if(storeId)query=query.eq('store_id',storeId);
+ const {data,error}=await query;if(error)return modal('查詢失敗',`<div class="notice warn">${error.message}</div>`);
+ $('recordBody').innerHTML=(data||[]).map(r=>`<tr><td>${(r.created_at||'').slice(0,10)}</td><td>${r.record_no}</td><td>${r.store_name_snapshot}</td><td>${[r.brand_snapshot,r.model_snapshot,r.spec_snapshot].filter(Boolean).join(' ')}</td><td>${r.imei}</td><td>${r.customer_name}</td><td>${r.condition_code}</td><td>${money(r.actual_amount)}</td><td><button class="btn light" onclick="viewRecord('${r.id}')">查看</button></td></tr>`).join('');
+}
+window.viewRecord=async id=>{const {data,error}=await sb.from('recycle_records').select('*').eq('id',id).single();if(error)return;modal('回收單明細',`<div class="grid2"><div><b>製單編號</b><p>${data.record_no}</p></div><div><b>門市</b><p>${data.store_name_snapshot}</p></div><div><b>商品</b><p>${data.brand_snapshot} ${data.model_snapshot} ${data.spec_snapshot||''}</p></div><div><b>IMEI</b><p>${data.imei}</p></div><div><b>客戶</b><p>${data.customer_name}</p></div><div><b>金額</b><p>${money(data.actual_amount)}</p></div></div>`)}
+
+
+function normalizeHeader(s){return String(s??'').trim().replace(/\s+/g,'').toLowerCase()}
+function pickField(row,names){
+ const m={};Object.keys(row||{}).forEach(k=>m[normalizeHeader(k)]=row[k]);
+ for(const n of names){const k=normalizeHeader(n);if(Object.prototype.hasOwnProperty.call(m,k))return m[k]}
+ return '';
+}
+function parsePriceNumber(v){
+ if(v===null||v===undefined||v==='')return null;
+ const n=Number(String(v).replace(/[,$NT＄\s]/gi,''));
+ return Number.isFinite(n)?n:null;
+}
+function productKey(brand,model,spec){return [brand,model,spec].map(x=>String(x??'').trim().toLowerCase()).join('||')}
+async function importPriceFile(file){
+ if(!currentUser||!['store_manager','hq_admin'].includes(currentUser.role))
+   return modal('權限不足','<div class="notice warn">只有門市主管／總公司管理員可以批次更新價格。</div>');
+ if(!file)return;
+ $('priceImportResult').innerHTML='<div class="notice info">正在讀取 Excel / CSV…</div>';
+ try{
+   const buf=await file.arrayBuffer();
+   const wb=XLSX.read(buf,{type:'array'});
+   const ws=wb.Sheets[wb.SheetNames[0]];
+   const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+   if(!rows.length)throw new Error('檔案沒有資料列');
+
+   const pmap=new Map(products.map(p=>[productKey(p.brand,p.model,p.spec||''),p]));
+   const inserts=[],errors=[],preview=[];
+   rows.forEach((row,idx)=>{
+     const line=idx+2;
+     const brand=String(pickField(row,['品牌','brand'])).trim();
+     const model=String(pickField(row,['型號','model'])).trim();
+     const spec=String(pickField(row,['規格','容量/規格','spec'])).trim();
+     const newPrice=parsePriceNumber(pickField(row,['新機參考價','新機價','new_price','newprice']));
+     const usedPrice=parsePriceNumber(pickField(row,['二手最高價','二手參考價','used_high_price','usedhighprice']));
+     if(!brand&&!model&&!spec&&newPrice===null&&usedPrice===null)return;
+     if(!brand||!model){errors.push(`第 ${line} 列：品牌、型號不可空白`);return}
+     if(newPrice===null||usedPrice===null){errors.push(`第 ${line} 列：新機參考價／二手最高價必須是數字`);return}
+     const p=pmap.get(productKey(brand,model,spec));
+     if(!p){errors.push(`第 ${line} 列：找不到商品「${brand} ${model} ${spec}」`);return}
+     inserts.push({product_id:p.id,new_price:newPrice,used_high_price:usedPrice,changed_by:currentUser.id});
+     preview.push(`${brand} ${model} ${spec}：${money(newPrice)} / ${money(usedPrice)}`);
+   });
+
+   if(errors.length){
+     $('priceImportResult').innerHTML=`<div class="notice warn"><b>匯入前檢查未通過：</b><br>${errors.slice(0,20).join('<br>')}${errors.length>20?`<br>…另有 ${errors.length-20} 筆`:''}</div>`;
+     return;
+   }
+   if(!inserts.length)throw new Error('沒有可匯入的有效資料');
+
+   if(!confirm(`準備匯入 ${inserts.length} 筆價格。\n\n前 5 筆：\n${preview.slice(0,5).join('\n')}\n\n確定寫入 Supabase 嗎？`)){
+     $('priceImportResult').innerHTML='<div class="notice info">已取消匯入，Supabase 未寫入資料。</div>';return;
+   }
+
+   const {error}=await sb.from('product_prices').insert(inserts);
+   if(error)throw error;
+   await loadPrices();
+   $('priceImportResult').innerHTML=`<div class="notice ok">✓ 已成功匯入 ${inserts.length} 筆價格。最新價格已重新載入。</div>`;
+ }catch(e){
+   $('priceImportResult').innerHTML=`<div class="notice warn">匯入失敗：${e.message||e}</div>`;
+ }finally{$('priceImportFile').value=''}
+}
+function downloadPriceTemplateCsv(){
+ const rows=[
+  ['品牌','型號','規格','新機參考價','二手最高價'],
+  ['Apple','iPhone 17','256GB/5G','21200','18500'],
+  ['Samsung','Galaxy S26','256GB/5G','20000','17000']
+ ];
+ const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\r\n');
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ a.download='價格批次匯入範本_V1.8.3.csv';a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+
+function renderPrices(){
+ $('priceBody').innerHTML=prices.map(p=>`<tr><td>${p.brand}</td><td>${p.model}</td><td>${p.spec||''}</td><td>${money(p.new_price)}</td><td>${money(p.used_high_price)}</td><td>最新</td><td>${(p.created_at||'').replace('T',' ').slice(0,16)}</td></tr>`).join('');
+}
+async function publishPrice(){
+ if(!currentUser||!['store_manager','hq_admin'].includes(currentUser.role))return;
+ const p=products.find(x=>x.brand===$('pBrand').value&&x.model===$('pModel').value.trim()&&(x.spec||'')===$('pSpec').value.trim());
+ if(!p)return modal('商品不存在','<div class="notice warn">請先確認此商品已存在 products 主檔。</div>');
+ const {error}=await sb.from('product_prices').insert({product_id:p.id,new_price:Number($('pNew').value),used_high_price:Number($('pUsed').value),changed_by:currentUser.id});
+ if(error)return modal('更新失敗',`<div class="notice warn">${error.message}</div>`);await loadPrices();modal('更新完成','<div class="notice ok">✓ 最新參考價格已寫入 Supabase。</div>');
+}
+
+async function loadUsers(){
+ const {data,error}=await sb.from('profiles').select('*').order('employee_no');if(error)return modal('人員讀取失敗',`<div class="notice warn">${error.message}</div>`);
+ $('userBody').innerHTML=(data||[]).map(u=>`<tr><td>${u.employee_no}</td><td>${u.name}</td><td>${ROLE_LABEL[u.role]||u.role}</td><td>${STATUS_LABEL[u.status]||u.status}</td><td>Supabase Auth</td><td><button class="btn light" onclick="editUser('${u.id}','${String(u.name).replaceAll("'","&#39;")}','${u.role}','${u.status}')">編輯</button></td></tr>`).join('');
+}
+window.editUser=async(id,name,role,status)=>{
+ const n=prompt('姓名',name);if(n===null)return;
+ const r=prompt('權限代碼：store_staff / store_manager / hq_admin',role);if(r===null)return;
+ const s=prompt('狀態：active / disabled',status);if(s===null)return;
+ const {error}=await sb.from('profiles').update({name:n.trim(),role:r.trim(),status:s.trim()}).eq('id',id);
+ if(error)return modal('修改失敗',`<div class="notice warn">${error.message}</div>`);loadUsers();
+}
+function addUserGuide(){
+ modal('新增／設定門市人員',`<div class="notice info">單一 HTML 版不會把 Secret / service_role key 放到瀏覽器，因此不能安全地直接建立 Supabase Auth 使用者。<br><br>請先在 Supabase → Authentication → Users 建立：<br><b>${$('uEmpNo').value||'員工編號'}@smartmobile.internal</b><br>密碼：員工編號。<br><br>建立後，再於 profiles 對應 UID。這樣可以維持前端沒有最高機密金鑰。</div>`);
+}
+
+async function loadStoresAdmin(){
+ const {data,error}=await sb.from('stores').select('*').order('store_name');if(error)return;
+ $('storeBody').innerHTML=(data||[]).map(s=>`<tr><td>${s.store_code}</td><td>${s.store_name}</td><td>${STATUS_LABEL[s.status]||s.status}</td><td><button class="btn light" onclick="editStore('${s.id}','${String(s.store_name).replaceAll("'","&#39;")}','${s.status}')">編輯</button></td></tr>`).join('');
+}
+async function addStore(){
+ const name=$('sName').value.trim(),code=$('sCode').value.trim();if(!name||!code)return;
+ const {error}=await sb.from('stores').insert({store_code:code,store_name:name,status:STATUS_CODE[$('sStatus').value]||'active'});if(error)return modal('新增失敗',`<div class="notice warn">${error.message}</div>`);
+ await loadStoresAdmin();await populateLoginStores();
+}
+window.editStore=async(id,name,status)=>{const n=prompt('門市名稱',name);if(n===null)return;const s=prompt('狀態：active / disabled',status);if(s===null)return;const {error}=await sb.from('stores').update({store_name:n.trim(),status:s.trim()}).eq('id',id);if(error)return modal('修改失敗',`<div class="notice warn">${error.message}</div>`);await loadStoresAdmin();await populateLoginStores()}
+
+function updateIdCaptureUI(){
+ const count=(idPhotos.front?1:0)+(idPhotos.back?1:0);$('idProgress').textContent=count+' / 2';
+ [['front','正面'],['back','反面']].forEach(([side,label])=>{
+  const preview=$(side+'Preview'),state=$(side+'State'),cap=$('capture'+(side==='front'?'Front':'Back')+'Btn'),ret=$('retake'+(side==='front'?'Front':'Back')+'Btn'),rem=$('remove'+(side==='front'?'Front':'Back')+'Btn');
+  if(idPhotos[side]){preview.innerHTML=`<img src="${idPhotos[side]}">`;state.textContent='已完成';state.classList.add('done');cap.classList.add('hidden');ret.classList.remove('hidden');rem.classList.remove('hidden')}
+  else{preview.textContent='請拍攝'+label;state.textContent='尚未拍攝';state.classList.remove('done');cap.classList.remove('hidden');ret.classList.add('hidden');rem.classList.add('hidden')}
+ });
+}
+async function openCamera(side){
+ cameraSide=side;$('cameraTitle').textContent='拍攝身分證'+(side==='front'?'正面':'反面');
+ if(!navigator.mediaDevices?.getUserMedia)return modal('無法開啟相機','<div class="notice warn">請使用 HTTPS 網址與支援相機的瀏覽器。</div>');
+ try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});$('cameraVideo').srcObject=cameraStream;$('cameraLayer').classList.remove('hidden')}
+ catch(e){modal('相機權限未開啟','<div class="notice warn">請允許相機權限，並使用 HTTPS 網址。</div>')}
+}
+function closeCamera(){if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;$('cameraVideo').srcObject=null;$('cameraLayer').classList.add('hidden');cameraSide=null}
+function takeIdPhoto(){if(!cameraStream||!cameraSide)return;const v=$('cameraVideo'),c=$('cameraCanvas');c.width=v.videoWidth||1280;c.height=v.videoHeight||720;c.getContext('2d').drawImage(v,0,0,c.width,c.height);idPhotos[cameraSide]=c.toDataURL('image/jpeg',.88);updateIdCaptureUI();closeCamera()}
+function removeIdPhoto(side){idPhotos[side]=null;updateIdCaptureUI()}
+
+function resetCurrentOrder(){
+ idPhotos={front:null,back:null};lastCreatedRecordNo=null;previewConfirmed=false;previewHash='';$('printBtn').classList.add('hidden');
+ ['imei','customer','customerId','phone','address','manualAmount','manualBrand','manualModel','manualSpec','manualProductNote'].forEach(id=>{if($(id))$(id).value=''});
+ if($('suggestedAmount'))$('suggestedAmount').value='';
+ document.querySelector('input[name=grade][value="A 全新機"]').checked=true;document.querySelector('input[name=productMode][value=existing]').checked=true;
+ inspectionResults={frame:'完好無傷',back:'完好無傷',display:'完好無傷且顯示正常',country:'台版',front_camera:'正常',rear_camera:'正常',battery:'91% ~ 100%',restart:'不會自動開關機',biometric:'正常',other:'無',other_text:''};
+ renderInspection();newDocNo();updateProductMode(true);checkImei();updatePreviewUi();resetQrUi();$('archiveStatusBox').classList.add('hidden');
+}
+
+
+let qrSession=null,qrPollTimer=null,customerSession=null,customerIdFiles={front:null,back:null};let signatureState={drawing:false,hasInk:false,lastX:0,lastY:0};
+function baseSignUrl(t){return `${location.href.split('#')[0]}#sign=${encodeURIComponent(t)}`}function randomToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);return [...a].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function createQrSession(){if(!$('imei').value.trim()||!$('customer').value.trim()||!$('customerId').value.trim()||!$('phone').value.trim()||!$('address').value.trim()||!currentAmount())return modal('資料尚未完成','<div class="notice warn">請先完成商品、IMEI、客戶資料與本次實際回收金額。</div>');if(!previewConfirmed||previewHash!==buildPreviewHash())return modal('請先預覽切結書','<div class="notice warn">請先預覽完整 V2.3 切結書，確認內容無誤後再產生 QR Code。</div>');const token=randomToken(),exp=new Date(Date.now()+15*60*1000);const row={token,record_no:$('docNo').value,store_id:currentStore.id,employee_id:currentUser.id,store_name_snapshot:currentStore.store_name,employee_name_snapshot:currentUser.name,product_name_snapshot:currentProductName(),imei:$('imei').value.trim(),condition_code:gradeCode(),condition_label:grade(),actual_amount:currentAmount(),customer_name:$('customer').value.trim(),customer_id_no:$('customerId').value.trim(),customer_phone:$('phone').value.trim(),customer_address:$('address').value.trim(),buy_date:$('buyDate').value,declaration_version:'V2.3',status:'waiting',expires_at:exp.toISOString()};const {data,error}=await sb.from('sign_sessions').insert(row).select('*').single();if(error)return modal('QR 建立失敗',`<div class="notice warn">${error.message}<br><br>請先執行 V2.0 / V2.1 SQL。</div>`);qrSession=data;$('qrCodeBox').innerHTML='';new QRCode($('qrCodeBox'),{text:baseSignUrl(token),width:210,height:210});$('qrStatusDot').className='dot waiting';$('qrStatusText').textContent='等待客戶掃描與簽署';$('qrExpireText').textContent='有效至：'+exp.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});$('cancelQrBtn').classList.remove('hidden');if(qrPollTimer)clearInterval(qrPollTimer);qrPollTimer=setInterval(checkQrStatus,2500)}async function checkQrStatus(){if(!qrSession)return;const {data}=await sb.from('sign_sessions').select('status,signed_at').eq('id',qrSession.id).single();if(data?.status==='completed'){$('qrStatusDot').className='dot done';$('qrStatusText').textContent='✓ 客戶已完成證件拍攝與電子簽署';$('qrExpireText').textContent='完成時間：'+new Date(data.signed_at).toLocaleString('zh-TW');$('archiveStatusBox').classList.remove('hidden');$('archiveStatusText').textContent='客戶簽署完成，等待建立正式電子回收檔';clearInterval(qrPollTimer)}else if(data?.status==='opened'){$('qrStatusText').textContent='客戶已開啟簽署頁，等待完成'}}
+async function cancelQrSession(){if(!qrSession)return;await sb.from('sign_sessions').update({status:'cancelled'}).eq('id',qrSession.id);resetQrUi('QR Code 已取消');$('qrStatusDot').className='dot expired';$('qrStatusText').textContent='已取消'}
+function checkHashSign(){const m=location.hash.match(/^#sign=([^&]+)/);return m?decodeURIComponent(m[1]):null}
+async function loadCustomerSignPage(token){document.querySelectorAll('#setupScreen,#loginScreen,#mainApp').forEach(x=>x?.classList.add('hidden'));$('customerSignScreen').classList.remove('hidden');await makeClient(EMBEDDED_SUPABASE_URL,EMBEDDED_SUPABASE_KEY);const {data,error}=await sb.rpc('get_sign_session_by_token',{p_token:token});if(error||!data?.length){$('signSessionStatus').className='notice warn';$('signSessionStatus').textContent='QR Code 無效或已逾時。';return}customerSession=data[0];await sb.rpc('mark_sign_session_opened',{p_token:token});$('signSessionStatus').className='notice ok';$('signSessionStatus').textContent='✓ 已連線至本次交易，請確認資料並完成簽署。';$('customerSignForm').classList.remove('hidden');$('customerTxnSummary').innerHTML=`<div class="k">交易單號</div><div>${customerSession.record_no}</div><div class="k">門市</div><div>${customerSession.store_name_snapshot}</div><div class="k">商品</div><div>${customerSession.product_name_snapshot}</div><div class="k">IMEI</div><div>${customerSession.imei}</div><div class="k">商品狀態</div><div>${customerSession.condition_label}</div><div class="k">回收金額</div><div><b>${money(customerSession.actual_amount)}</b></div><div class="k">客戶姓名</div><div>${customerSession.customer_name}</div>`;$('customerV23Text').innerHTML='<b>一、商品來源保證</b><br>乙方保證本交易商品來源合法。<br><br><b>二、個人資料蒐集</b><br>乙方同意甲方於本次回收、申報及相關必要範圍蒐集處理資料。<br><br><b>三、個人一時貿易所得申報</b><br>依 V2.3 切結書辦理。<br><br><b>四、其他</b><br>附件構成本切結書之一部分。';initSignaturePad()}
+function initSignaturePad(){const c=$('signatureCanvas'),ctx=c.getContext('2d'),r=c.getBoundingClientRect();c.width=Math.max(1,r.width*devicePixelRatio);c.height=190*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);ctx.lineWidth=2.2;ctx.lineCap='round';const pos=e=>{const b=c.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}};c.addEventListener('pointerdown',e=>{const p=pos(e);signatureState.drawing=true;signatureState.lastX=p.x;signatureState.lastY=p.y});c.addEventListener('pointermove',e=>{if(!signatureState.drawing)return;const p=pos(e);ctx.beginPath();ctx.moveTo(signatureState.lastX,signatureState.lastY);ctx.lineTo(p.x,p.y);ctx.stroke();signatureState.lastX=p.x;signatureState.lastY=p.y;signatureState.hasInk=true});window.addEventListener('pointerup',()=>signatureState.drawing=false)}
+function clearSignature(){const c=$('signatureCanvas');c.getContext('2d').clearRect(0,0,c.width,c.height);signatureState.hasInk=false}
+function previewCustomerFile(side,file){if(!file)return;customerIdFiles[side]=file;const u=URL.createObjectURL(file);$(side==='front'?'customerFrontPreview':'customerBackPreview').innerHTML=`<img src="${u}">`}
+async function submitCustomerSign(){if(!customerIdFiles.front||!customerIdFiles.back)return alert('請完成身分證正反面拍攝');if(!signatureState.hasInk)return alert('請先完成手寫簽名');if(!$('agreeV23').checked)return alert('請勾選同意 V2.3');const t=customerSession.token,ts=Date.now(),fp=`${t}/front_${ts}.jpg`,bp=`${t}/back_${ts}.jpg`,sbk=await new Promise(r=>$('signatureCanvas').toBlob(r,'image/png')),sp=`${t}/signature_${ts}.png`;for(const [p,f,ct] of [[fp,customerIdFiles.front,customerIdFiles.front.type||'image/jpeg'],[bp,customerIdFiles.back,customerIdFiles.back.type||'image/jpeg'],[sp,sbk,'image/png']]){const {error}=await sb.storage.from('return-documents').upload(p,f,{contentType:ct});if(error)return alert('上傳失敗：'+error.message)}const {error}=await sb.rpc('complete_sign_session',{p_token:t,p_front_path:fp,p_back_path:bp,p_signature_path:sp});if(error)return alert(error.message);$('customerSignForm').classList.add('hidden');$('customerComplete').classList.remove('hidden');$('customerCompleteNo').textContent='交易單號：'+customerSession.record_no}
+
+// events
+$('createQrBtn').onclick=createQrSession;$('cancelQrBtn').onclick=cancelQrSession;$('customerFrontInput').onchange=e=>previewCustomerFile('front',e.target.files?.[0]);$('customerBackInput').onchange=e=>previewCustomerFile('back',e.target.files?.[0]);$('clearSignatureBtn').onclick=clearSignature;$('submitCustomerSignBtn').onclick=submitCustomerSign;
+
+$('loginBtn').onclick=login;$('logoutBtn').onclick=logout;
+document.querySelectorAll('.nav[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+document.querySelectorAll('input[name=productMode]').forEach(r=>r.onchange=async()=>{await markPreviewDirty();updateProductMode(true)});
+document.querySelectorAll('input[name=grade]').forEach(r=>r.onchange=async()=>{await markPreviewDirty();updateGrade(true)});
+$('brand').onchange=async()=>{populateModels();await markPreviewDirty();updateGrade(true)};$('model').onchange=async()=>{populateSpecs();await markPreviewDirty();updateGrade(true)};$('spec').onchange=async()=>{await markPreviewDirty();updateGrade(true)};
+['manualBrand','manualModel','manualSpec','manualProductNote','customer','customerId','phone','address','buyDate'].forEach(id=>{if($(id))$(id).oninput=()=>{markPreviewDirty();if(id.startsWith('manual'))updateGrade(false)}});
+$('manualAmount').oninput=()=>{markPreviewDirty();updateGrade(false)};$('imei').oninput=()=>{markPreviewDirty();checkImei()};
+$('importPriceBtn').onclick=()=>$('priceImportFile').click();
+$('priceImportFile').onchange=e=>importPriceFile(e.target.files?.[0]);
+$('downloadPriceTemplateBtn').onclick=downloadPriceTemplateCsv;
+$('saveBtn').onclick=createRecord;$('previewBtn').onclick=previewDeclaration;$('printBtn').onclick=printDeclaration;$('clearBtn').onclick=resetCurrentOrder;$('searchBtn').onclick=loadRecords;$('publishBtn').onclick=publishPrice;
+$('addUserBtn').onclick=addUserGuide;$('addStoreBtn').onclick=addStore;
+
+$('closeModal').onclick=closeModal;$('overlay').onclick=e=>{if(e.target===$('overlay'))closeModal()};
+
+// V1.4 static import buttons: keep interface, explain safe Supabase path
+$('downloadTemplateBtn').onclick=()=>{const csv='\uFEFF員工編號,姓名,權限,狀態\n0383,王小明,門市人員,啟用\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='門市人員帳號匯入範本_V1.8.csv';a.click();URL.revokeObjectURL(a.href)};
+$('importUsersBtn').onclick=()=>modal('批次匯入說明','<div class="notice info">Supabase Auth 帳號建立需要管理端權限。單一 HTML 版不放 service_role key，因此批次 Auth 建帳需改由 Supabase Dashboard／Edge Function 執行；profiles 資料可再批次對應。</div>');
+$('importLogBtn').onclick=()=>modal('匯入紀錄','<div class="notice info">V1.8 單一 HTML 版尚未建立 Auth 批次匯入紀錄。</div>');
+
+const sideLogo=document.querySelector('.brand img');if(sideLogo&&$('loginLogo'))$('loginLogo').src=sideLogo.src;
+renderInspection();updateProductMode(true);updatePreviewUi();const signToken=checkHashSign();if(signToken)loadCustomerSignPage(signToken);else boot();
+</script>
+
+</body>
+</html>
