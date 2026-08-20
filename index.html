@@ -2075,6 +2075,138 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
     min-height:9mm;
   }
 }
+
+
+/* Web V4.0｜恢復商品內容／個人一時貿易申報表中線 */
+.legacy-master-combo-right{
+  border-left:1px solid var(--doc-border)!important;
+}
+@media print{
+  .legacy-print-page .legacy-master-combo-right{
+    border-left:1px solid var(--doc-border)!important;
+  }
+}
+
+
+
+/* Web V4.0｜商品內容 / 一時貿易標題中線精準對齊下方欄線
+   colspan 標題格的內框會造成約半個 CSS pixel 的偏移，
+   改用絕對定位線條，以第一、二欄總寬 36.36% 為基準並補償 0.5px。 */
+.legacy-master-combo{
+  position:relative!important;
+}
+.legacy-master-combo-right{
+  border-left:0!important;
+}
+.legacy-master-combo::after{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  bottom:0!important;
+  left:calc(36.36% - 0.5px)!important;
+  width:1px!important;
+  background:var(--doc-border)!important;
+  z-index:3!important;
+  pointer-events:none!important;
+}
+@media print{
+  .legacy-print-page .legacy-master-combo-right{
+    border-left:0!important;
+  }
+  .legacy-print-page .legacy-master-combo::after{
+    left:calc(36.36% - 0.5px)!important;
+    width:1px!important;
+    background:var(--doc-border)!important;
+  }
+}
+
+
+
+/* Web V4.0｜標題中線與下方實際欄線同步
+   上方不再用固定 36.36% 猜位置，而由 JS 讀取下方第二欄的實際右邊界。
+   top/bottom 各延伸 1px，避免 border-collapse 在高倍率下出現上下斷點。 */
+.legacy-master-combo{
+  --legacy-master-split-x:36.36%;
+  position:relative!important;
+}
+.legacy-master-combo-right{
+  border-left:0!important;
+}
+.legacy-master-combo::after{
+  content:""!important;
+  position:absolute!important;
+  left:var(--legacy-master-split-x)!important;
+  top:-1px!important;
+  bottom:-1px!important;
+  width:1px!important;
+  background:var(--doc-border)!important;
+  z-index:5!important;
+  pointer-events:none!important;
+  transform:translateX(-0.5px)!important;
+}
+@media print{
+  .legacy-print-page .legacy-master-combo::after{
+    left:var(--legacy-master-split-x)!important;
+    top:-1px!important;
+    bottom:-1px!important;
+    width:1px!important;
+    transform:translateX(-0.5px)!important;
+    background:var(--doc-border)!important;
+  }
+}
+
+
+
+/* Web V4.0｜商品內容 / 一時貿易中線結構修正
+   改回同一張 table 的兩個真實 TH（colspan 2 / 6），
+   中線由表格欄線本身產生，因此與下方第 2 欄右界是同一條幾何線。
+   TR 本身填藍色，避免 Safari / Chrome 在次像素時露出白縫。 */
+.legacy-master-table .legacy-master-r0{
+  background:var(--doc-blue)!important;
+}
+.legacy-master-table .legacy-master-r0 > th{
+  background:transparent!important;
+  color:#fff!important;
+  border-top:1px solid var(--doc-border)!important;
+  border-bottom:1px solid var(--doc-border)!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+.legacy-master-table .legacy-master-r0 > th:first-child{
+  border-left:1px solid var(--doc-border)!important;
+  border-right:1px solid var(--doc-border)!important;
+}
+.legacy-master-table .legacy-master-r0 > th:last-child{
+  border-left:1px solid var(--doc-border)!important;
+  border-right:1px solid var(--doc-border)!important;
+}
+
+/* 舊的人工分隔線完全停用 */
+.legacy-master-combo::after,
+.legacy-master-combo-right{
+  display:none!important;
+}
+
+@media print{
+  .legacy-print-page .legacy-master-table .legacy-master-r0{
+    background:var(--doc-blue)!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r0 > th{
+    background:transparent!important;
+    color:#fff!important;
+    border-top:1px solid var(--doc-border)!important;
+    border-bottom:1px solid var(--doc-border)!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r0 > th:first-child{
+    border-left:1px solid var(--doc-border)!important;
+    border-right:1px solid var(--doc-border)!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r0 > th:last-child{
+    border-left:1px solid var(--doc-border)!important;
+    border-right:1px solid var(--doc-border)!important;
+  }
+}
+
 </style>
 
 </head>
@@ -2530,6 +2662,22 @@ let inspectionResults={
 };
 
 function internalEmail(emp){return `${String(emp).trim()}@smartmobile.internal`}
+
+function syncLegacyMasterSplit(root=document){
+ const tables=[...(root?.querySelectorAll?.('.legacy-master-table')||[])];
+ tables.forEach(table=>{
+   const combo=table.querySelector('.legacy-master-combo');
+   const anchor=table.querySelector('.legacy-master-r1 td:nth-child(2)');
+   if(!combo||!anchor)return;
+   const comboRect=combo.getBoundingClientRect();
+   const anchorRect=anchor.getBoundingClientRect();
+   const x=anchorRect.right-comboRect.left;
+   if(Number.isFinite(x)&&x>0){
+     combo.style.setProperty('--legacy-master-split-x',`${x}px`);
+   }
+ });
+}
+
 function fitLegacyPreview(){
  const overlay=$('overlay');
  const panel=overlay?.querySelector('.modal');
@@ -2553,6 +2701,7 @@ function fitLegacyPreview(){
    el.scrollLeft=0;
    el.scrollTop=0;
  });
+ syncLegacyMasterSplit(shell);
 }
 function modal(title,html){
  $('modalTitle').textContent=title;
@@ -3175,12 +3324,8 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        <col style="width:9.44%"><col style="width:26.92%"><col style="width:10.49%"><col style="width:11.19%"><col style="width:11.19%"><col style="width:8.74%"><col style="width:10.49%"><col style="width:11.54%">
      </colgroup>
      <tr class="legacy-master-r0">
-       <th class="bar legacy-master-combo" colspan="8">
-         <div class="legacy-master-combo-inner">
-           <div class="legacy-master-combo-left">◇ 商品內容 ◆</div>
-           <div class="legacy-master-combo-right">◇ 個人一時貿易申報表 ◆</div>
-         </div>
-       </th>
+       <th class="bar legacy-master-left-title" colspan="2">◇ 商品內容 ◆</th>
+       <th class="bar legacy-master-right-title" colspan="6">◇ 個人一時貿易申報表 ◆</th>
      </tr>
      <tr class="legacy-master-r1">
        <td class="lab">分店名稱</td><td>${d.store||''}</td>
@@ -3302,6 +3447,7 @@ function declarationSnapshotText(){
 }
 function fillPrintSheet(recordNo,signatureUrl=''){
  $('printSheet').innerHTML=legacyDeclarationTemplate(currentLegacyDeclarationData(recordNo),signatureUrl,'','',true);
+ requestAnimationFrame(()=>syncLegacyMasterSplit($('printSheet')));
 }
 
 async function createRecord(){
@@ -3484,6 +3630,7 @@ async function printPreparedSheet(){
  // signed URL 圖片是非同步載入；若立即呼叫 window.print()，手機 / Chrome 有機會在簽名還沒完成繪製前就進入列印。
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  await waitForPrintAssets();
+ syncLegacyMasterSplit($('printSheet'));
  await new Promise(resolve=>setTimeout(resolve,80));
  window.print();
 }
