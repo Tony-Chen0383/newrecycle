@@ -2397,7 +2397,7 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 
     <div class="actions">
       <button class="btn gold" id="previewBtn">預覽完整切結書</button><button class="btn light hidden" id="printBtn">列印切結書</button>
-      <button class="btn light" id="clearBtn">清空</button>
+      <button type="button" class="btn light" id="clearBtn" onclick="hardClearCreateForm(event)">清空</button>
     </div>
   </section>
 
@@ -2865,8 +2865,8 @@ function clearCreateDraftLocalState(){
  const existingMode=document.querySelector('input[name=productMode][value=existing]');
  if(existingMode)existingMode.checked=true;
 
- // 既有商品下拉全部回到 "-"
- populateProductSelects();
+ // 既有商品：快速搜尋、品牌、型號、規格全部強制回到初始狀態
+ forceResetExistingProductFields();
 
  // ABCDE 回到 A
  const gradeA=document.querySelector('input[name=gradeCondition][value="A 全新機"]');
@@ -3035,6 +3035,30 @@ function resetProductSearchUI(){
    $('productSearchResults').innerHTML='';
    $('productSearchResults').classList.remove('show');
  }
+}
+
+function forceResetExistingProductFields(){
+ // 清空按鈕專用：直接把畫面上的商品搜尋／品牌／型號／規格恢復到初始狀態。
+ resetProductSearchUI();
+
+ const brand=$('brand'),model=$('model'),spec=$('spec');
+ if(brand){
+   const brands=[...new Set(products.map(p=>p.brand).filter(Boolean))];
+   brand.innerHTML='<option value="">-</option>'+brands.map(x=>`<option>${x}</option>`).join('');
+   brand.selectedIndex=0;
+   brand.value='';
+ }
+ if(model){
+   model.innerHTML='<option value="">-</option>';
+   model.selectedIndex=0;
+   model.value='';
+ }
+ if(spec){
+   spec.innerHTML='<option value="">-</option>';
+   spec.selectedIndex=0;
+   spec.value='';
+ }
+ updatePriceDisplay();
 }
 
 function setProductSearchActive(index){
@@ -3661,7 +3685,11 @@ async function printDeclaration(){
  if(!signatureUrl)return modal('簽名尚未載入','<div class="notice warn">正式回收單已建立，但目前無法讀取電子簽名。請確認網路連線後重新按「列印切結書」，避免列印出沒有簽名的文件。</div>');
  if(record)fillPrintSheetFromRecord(record,signatureUrl);
  else fillPrintSheet(lastCreatedRecordNo,signatureUrl);
+
+ // 正式切結書已經由 printSheet 固定完成，列印結束後直接清空目前建立回收單頁面，
+ // 不保留已完成交易在畫面上，讓門市可直接開始下一筆。
  await printPreparedSheet();
+ await resetCurrentOrder();
 }
 
 function recordConditionLabel(code){
@@ -4075,12 +4103,222 @@ function closeCamera(){if(cameraStream)cameraStream.getTracks().forEach(t=>t.sto
 function takeIdPhoto(){if(!cameraStream||!cameraSide)return;const v=$('cameraVideo'),c=$('cameraCanvas');c.width=v.videoWidth||1280;c.height=v.videoHeight||720;c.getContext('2d').drawImage(v,0,0,c.width,c.height);idPhotos[cameraSide]=c.toDataURL('image/jpeg',.88);updateIdCaptureUI();closeCamera()}
 function removeIdPhoto(side){idPhotos[side]=null;updateIdCaptureUI()}
 
-function resetCurrentOrder(){
- idPhotos={front:null,back:null};lastCreatedRecordNo=null;$('printBtn').classList.add('hidden');
- ['imei','customer','customerId','phone','address','manualAmount','manualBrand','manualModel','manualSpec','manualProductNote'].forEach(id=>{if($(id))$(id).value=''});
- document.querySelector('input[name=gradeCondition][value="A 全新機"]').checked=true;document.querySelector('input[name=productMode][value=existing]').checked=true;
- inspectionResults={frame:'完好無傷',back:'完好無傷',display:'完好無傷且顯示正常',country:'台版',front_camera:'正常',rear_camera:'正常',battery:'91% ~ 100%',restart:'不會自動開關機',biometric:'正常',other:'無',other_text:''};
- renderInspection();declarationPreviewConfirmed=false;declarationPreviewSessionId=null;updateProductMode();updateGrade();updateQrPreviewState();checkImei();newDocNo();
+
+function hardResetProductSelectors(){
+ // 完全不依賴 products / Supabase / QR 狀態，直接重置畫面 DOM。
+ const quick=$('productQuickSearch');
+ if(quick){
+   quick.value='';
+   quick.defaultValue='';
+   quick.blur();
+ }
+ const results=$('productSearchResults');
+ if(results){
+   results.innerHTML='';
+   results.classList.remove('show');
+ }
+
+ const brand=$('brand');
+ if(brand){
+   brand.value='';
+   brand.selectedIndex=0;
+   if(brand.options.length)brand.options[0].selected=true;
+   brand.blur();
+ }
+
+ const model=$('model');
+ if(model){
+   model.innerHTML='<option value="" selected>-</option>';
+   model.value='';
+   model.selectedIndex=0;
+   model.blur();
+ }
+
+ const spec=$('spec');
+ if(spec){
+   spec.innerHTML='<option value="" selected>-</option>';
+   spec.value='';
+   spec.selectedIndex=0;
+   spec.blur();
+ }
+
+ productSearchActiveIndex=-1;
+}
+
+
+function clearCreateFormLocalOnly(){
+ // 僅清前端，不寫入 Supabase。
+ hardResetProductSelectors();
+
+ const existingMode=document.querySelector('input[name=productMode][value="existing"]');
+ if(existingMode)existingMode.checked=true;
+ const manualMode=document.querySelector('input[name=productMode][value="manual"]');
+ if(manualMode)manualMode.checked=false;
+
+ ['manualBrand','manualModel','manualSpec','manualProductNote','imei','manualAmount',
+  'customer','customerId','phone','address'].forEach(id=>{
+   const el=$(id);
+   if(el){ el.value=''; el.defaultValue=''; }
+ });
+
+ const gradeA=document.querySelector('input[name=gradeCondition][value="A 全新機"]');
+ if(gradeA)gradeA.checked=true;
+
+ idPhotos={front:null,back:null};
+ customerIdFiles={front:null,back:null};
+ lastCreatedRecordNo=null;
+ declarationPreviewConfirmed=false;
+ declarationPreviewSessionId=null;
+
+ if(typeof updateIdCaptureUI==='function')updateIdCaptureUI();
+ if(typeof resetQrLocalUi==='function')resetQrLocalUi('尚未產生 QR Code');
+ if(typeof renderInspection==='function')renderInspection();
+ if(typeof updateProductMode==='function')updateProductMode();
+ if(typeof updateGrade==='function')updateGrade(false);
+ if(typeof checkImei==='function')checkImei();
+ if(typeof newDocNo==='function')newDocNo();
+
+ if($('printBtn'))$('printBtn').classList.add('hidden');
+
+ // Safari / Chrome 下一個 repaint 再鎖一次初始值。
+ requestAnimationFrame(()=>{
+   hardResetProductSelectors();
+   requestAnimationFrame(()=>hardResetProductSelectors());
+ });
+}
+
+async function hardClearCreateForm(event,options={}){
+ if(event){
+   event.preventDefault();
+   event.stopPropagation();
+ }
+
+ const clearBtn=$('clearBtn');
+ const oldText=clearBtn?.textContent||'清空';
+ if(clearBtn){
+   clearBtn.disabled=true;
+   clearBtn.textContent='清空中...';
+ }
+
+ try{
+   // 沒有 QR：純前端清空，不碰 Supabase。
+   if(!qrSession?.id){
+     clearCreateFormLocalOnly();
+     return true;
+   }
+
+   // 有 QR：先確認伺服器端真實狀態，避免畫面清掉但舊 QR 還能用。
+   const {data:session,error:readError}=await sb
+     .from('sign_sessions')
+     .select('id,status')
+     .eq('id',qrSession.id)
+     .single();
+
+   if(readError){
+     modal('目前無法安全清空',`
+       <div class="notice warn">
+         無法確認目前 QR Code 的伺服器狀態：${readError.message}<br><br>
+         為避免舊 QR Code 仍可使用，系統暫時不會清除這筆回收資料。請確認網路後再試。
+       </div>
+     `);
+     return false;
+   }
+
+   let status=session?.status||'';
+
+   // 客戶已簽完，但正式回收單還沒建立：禁止清空。
+   if(status==='completed'&&!lastCreatedRecordNo){
+     modal('不可清空這筆交易',`
+       <div class="notice warn">
+         <b>客戶已完成電子簽署，但正式回收單尚未建立。</b><br><br>
+         請先預覽完整切結書並建立正式回收單，再進行列印或清空，避免簽署資料與正式紀錄中斷。
+       </div>
+     `);
+     return false;
+   }
+
+   // QR 尚在等待或已被開啟：必須先在 Supabase 作廢成功，才允許清空前端。
+   if(['waiting','opened'].includes(status)){
+     const {data:cancelledRows,error:cancelError}=await sb
+       .from('sign_sessions')
+       .update({status:'cancelled'})
+       .eq('id',qrSession.id)
+       .in('status',['waiting','opened'])
+       .select('id,status');
+
+     if(cancelError){
+       modal('QR 作廢失敗',`
+         <div class="notice warn">
+           目前 QR Code 無法在伺服器端作廢：${cancelError.message}<br><br>
+           為避免客戶仍能使用舊 QR，這筆資料不會被清空。
+         </div>
+       `);
+       return false;
+     }
+
+     if(!cancelledRows?.length){
+       // 可能剛好在清空瞬間完成簽署，重新讀一次，不能誤清。
+       const {data:latest,error:latestError}=await sb
+         .from('sign_sessions')
+         .select('status')
+         .eq('id',qrSession.id)
+         .single();
+
+       if(latestError){
+         modal('目前無法安全清空',`
+           <div class="notice warn">
+             QR 狀態在清空期間發生變化，且目前無法重新確認。系統已停止清空，請稍後再試。
+           </div>
+         `);
+         return false;
+       }
+
+       status=latest?.status||'';
+
+       if(status==='completed'&&!lastCreatedRecordNo){
+         modal('不可清空這筆交易',`
+           <div class="notice warn">
+             <b>客戶剛剛已完成電子簽署。</b><br><br>
+             請先建立正式回收單，系統不會清除這筆已簽署資料。
+           </div>
+         `);
+         return false;
+       }
+
+       if(!['cancelled','expired'].includes(status) && !lastCreatedRecordNo){
+         modal('QR 尚未安全作廢',`
+           <div class="notice warn">
+             目前 QR 狀態為「${status||'未知'}」，系統不會直接清空。請稍後再試或先使用「取消本次 QR」。
+           </div>
+         `);
+         return false;
+       }
+     }
+   }
+
+   // completed + 已有正式回收單，或 cancelled / expired：只清前端，不刪任何正式資料。
+   clearCreateFormLocalOnly();
+   return true;
+
+ }catch(err){
+   console.error('安全清空失敗：',err);
+   modal('清空失敗',`
+     <div class="notice warn">
+       ${err?.message||err}<br><br>
+       系統沒有刪除 Supabase 的正式回收紀錄，請稍後再試。
+     </div>
+   `);
+   return false;
+ }finally{
+   if(clearBtn){
+     clearBtn.disabled=false;
+     clearBtn.textContent=oldText;
+   }
+ }
+}
+
+async function resetCurrentOrder(){
+ return await hardClearCreateForm(null,{source:'system'});
 }
 
 
@@ -4222,6 +4460,8 @@ function getCanvasInkBounds(src){
  return maxX<0?null:{x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1};
 }
 
+/* Web V4.0｜簽名方向邏輯恢復：沿用 V3.1.7.9 已驗證規則。
+   不改 QR claim、Supabase、上傳或正式切結書流程。 */
 function buildHorizontalSignatureCanvasFromStrokes(strokes,normalizeManual=false){
  if(!Array.isArray(strokes)||!strokes.length)return null;
  const valid=strokes.filter(s=>Array.isArray(s)&&s.length);
@@ -4251,7 +4491,7 @@ function buildHorizontalSignatureCanvasFromStrokes(strokes,normalizeManual=false
  let b=boundsOf(mapped);
  if(!b)return null;
 
- if(b.h>b.w){
+ if(normalizeManual && b.h>b.w*1.05){
    // Canvas / browser 螢幕座標的 Y 軸是向下，與數學座標相反。
    // 視覺上的「逆時針 90°」應使用 (x, y) -> (y, -x)。
    const ccw=cloneMapped(p=>({x:p.y,y:-p.x}));
@@ -4288,14 +4528,14 @@ function buildHorizontalSignatureCanvasFromStrokes(strokes,normalizeManual=false
  const ctx=out.getContext('2d');
  ctx.clearRect(0,0,out.width,out.height);
 
- const scale=Math.min((out.width*0.96)/b.w,(out.height*0.90)/b.h);
+ const scale=Math.min((out.width*0.90)/b.w,(out.height*0.76)/b.h);
  const ox=(out.width-b.w*scale)/2;
  const oy=(out.height-b.h*scale)/2;
 
  ctx.strokeStyle='#111';
  ctx.lineCap='round';
  ctx.lineJoin='round';
- ctx.lineWidth=Math.max(3.2,6.2*scale);
+ ctx.lineWidth=Math.max(2.2,4.8*scale);
 
  for(const stroke of mapped){
    if(!stroke.length)continue;
@@ -4335,7 +4575,7 @@ function buildHorizontalSignatureCanvas(src,normalizeManual=false){
  work.width=src.width;work.height=src.height;
  work.getContext('2d').drawImage(src,0,0);
 
- if(b.h>b.w){
+ if(b.h>b.w*1.15){
    const rot=document.createElement('canvas');
    rot.width=src.height;rot.height=src.width;
    const rctx=rot.getContext('2d');
@@ -4350,7 +4590,7 @@ function buildHorizontalSignatureCanvas(src,normalizeManual=false){
 
  const wb=getCanvasInkBounds(work);
  if(!wb)return out;
- const scale=Math.min((out.width*0.96)/wb.w,(out.height*0.90)/wb.h);
+ const scale=Math.min((out.width*0.90)/wb.w,(out.height*0.78)/wb.h);
  const dw=wb.w*scale,dh=wb.h*scale;
  ctx.drawImage(work,wb.x,wb.y,wb.w,wb.h,(out.width-dw)/2,(out.height-dh)/2,dw,dh);
  return out;
@@ -4368,7 +4608,7 @@ function drawHorizontalSignatureToVisible(src){
  ctx.setTransform(1,0,0,1,0,0);
  ctx.clearRect(0,0,c.width,c.height);
  if(src?.width&&src?.height){
-   const scale=Math.min((c.width*0.98)/src.width,(c.height*0.92)/src.height);
+   const scale=Math.min((c.width*0.92)/src.width,(c.height*0.82)/src.height);
    const dw=src.width*scale,dh=src.height*scale;
    ctx.drawImage(src,(c.width-dw)/2,(c.height-dh)/2,dw,dh);
  }
@@ -4757,9 +4997,9 @@ async function submitCustomerSign(){
    const bp=`${t}/back_${ts}.jpg`;
 
    const finalSignature=
-     buildHorizontalSignatureCanvasFromStrokes(signatureState.strokes,true) ||
      signatureState.normalizedCanvas ||
-     buildHorizontalSignatureCanvas($('signatureCanvas'),true);
+     buildHorizontalSignatureCanvas($('signatureCanvas'), signatureState.fullscreenMode==='manual') ||
+     buildHorizontalSignatureCanvasFromStrokes(signatureState.strokes,true);
 
    if(!finalSignature)throw new Error('簽名資料產生失敗，請重新簽名');
    signatureState.normalizedCanvas=finalSignature;
@@ -4890,7 +5130,7 @@ lockBuyDateToday();
 $('buyDate')?.addEventListener('change',()=>{lockBuyDateToday();markPreviewDirty()});
 $('buyDate')?.addEventListener('input',()=>{lockBuyDateToday();markPreviewDirty()});
 
-$('previewBtn').onclick=previewDeclaration;$('printBtn').onclick=printDeclaration;$('clearBtn').onclick=resetCurrentOrder;$('searchBtn').onclick=loadRecords;$('recordThisMonthBtn').onclick=()=>{ensureRecordDefaultDates(true);loadRecords()};$('publishBtn').onclick=publishPrice;['customer','customerId','phone','address','manualBrand','manualModel','manualSpec','manualProductNote','buyDate'].forEach(id=>$(id)?.addEventListener('input',markPreviewDirty));['customer','customerId','phone','address','manualBrand','manualModel','manualSpec','manualProductNote','buyDate'].forEach(id=>$(id)?.addEventListener('change',markPreviewDirty));
+$('previewBtn').onclick=previewDeclaration;$('printBtn').onclick=printDeclaration;$('searchBtn').onclick=loadRecords;$('recordThisMonthBtn').onclick=()=>{ensureRecordDefaultDates(true);loadRecords()};$('publishBtn').onclick=publishPrice;['customer','customerId','phone','address','manualBrand','manualModel','manualSpec','manualProductNote','buyDate'].forEach(id=>$(id)?.addEventListener('input',markPreviewDirty));['customer','customerId','phone','address','manualBrand','manualModel','manualSpec','manualProductNote','buyDate'].forEach(id=>$(id)?.addEventListener('change',markPreviewDirty));
 $('addUserBtn').onclick=addUserGuide;$('addStoreBtn').onclick=addStore;
 
 $('closeModal').onclick=closeModal;$('overlay').onclick=e=>{if(e.target===$('overlay'))closeModal()};
