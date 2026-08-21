@@ -2207,6 +2207,234 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
   }
 }
 
+
+
+/* Web V4.0｜Safari / Chrome / Edge 下拉選單介面統一
+   僅調整 select，不動回收、QR、簽名、Supabase 邏輯。 */
+select{
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  min-height:42px!important;
+  height:42px!important;
+  font-size:14px!important;
+  line-height:1.4!important;
+  padding:9px 38px 9px 10px!important;
+  background-color:#fff!important;
+  background-image:
+    linear-gradient(45deg,transparent 50%,#526174 50%),
+    linear-gradient(135deg,#526174 50%,transparent 50%)!important;
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%!important;
+  background-size:5px 5px,5px 5px!important;
+  background-repeat:no-repeat!important;
+  color:var(--ink)!important;
+  border:1px solid #ccd7e4!important;
+  border-radius:8px!important;
+  box-sizing:border-box!important;
+}
+
+select:focus{
+  border-color:#4d8bc3!important;
+  box-shadow:0 0 0 3px rgba(58,123,184,.09)!important;
+  outline:none!important;
+}
+
+/* Safari disabled select 不要縮小或變成原生小控制項 */
+select:disabled{
+  opacity:1!important;
+  color:#6b7787!important;
+  background-color:#f3f6fa!important;
+  cursor:not-allowed!important;
+}
+
+/* iPhone / iPad Safari：表單字級至少 16px，避免點選時頁面自動放大 */
+@media (max-width:760px){
+  select{
+    min-height:44px!important;
+    height:44px!important;
+    font-size:16px!important;
+    padding:10px 40px 10px 11px!important;
+  }
+}
+
+
+
+/* =========================================================
+   Web V4.0｜跨瀏覽器表單相容 + 清空成功提示
+   僅處理 UI；不變更 QR / Supabase / 簽名 / 回收資料邏輯
+   ========================================================= */
+
+/* 文字輸入類元件：Safari / Chrome / Edge 統一高度與字級 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+textarea{
+  -webkit-appearance:none;
+  appearance:none;
+  min-height:42px;
+  font-size:14px;
+  line-height:1.4;
+  color:var(--ink);
+  background-color:#fff;
+  border:1px solid #ccd7e4;
+  border-radius:8px;
+  padding:9px 10px;
+  box-sizing:border-box;
+}
+
+textarea{
+  height:auto;
+  min-height:72px;
+  resize:vertical;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+textarea:focus{
+  border-color:#4d8bc3!important;
+  box-shadow:0 0 0 3px rgba(58,123,184,.09)!important;
+  outline:none!important;
+}
+
+/* 日期欄保留瀏覽器原生日期選擇器，但尺寸統一 */
+input[type="date"]{
+  -webkit-appearance:auto!important;
+  appearance:auto!important;
+  min-height:42px!important;
+  height:42px!important;
+  font-size:14px!important;
+  line-height:1.4!important;
+  padding:8px 10px!important;
+}
+
+/* Safari readonly / disabled 不要變成過小或灰到看不清楚 */
+input:disabled,
+textarea:disabled{
+  opacity:1!important;
+  color:#6b7787!important;
+  -webkit-text-fill-color:#6b7787!important;
+  background:#f3f6fa!important;
+}
+input[readonly]{
+  opacity:1!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+
+/* 檔案上傳：Safari / Chrome / Edge 統一外框與按鈕 */
+input[type="file"]{
+  -webkit-appearance:none;
+  appearance:none;
+  min-height:42px;
+  font-size:14px;
+  line-height:1.4;
+  padding:5px 6px;
+  color:#526174;
+  background:#fff;
+  border:1px solid #ccd7e4;
+  border-radius:8px;
+  box-sizing:border-box;
+}
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button{
+  min-height:30px;
+  margin:0 8px 0 0;
+  padding:6px 10px;
+  border:0;
+  border-radius:6px;
+  background:#edf2f7;
+  color:#2b3b50;
+  font-weight:800;
+  cursor:pointer;
+}
+
+/* 一般操作按鈕避免 Safari 使用較小的原生控制項 */
+.btn,
+button.btn{
+  -webkit-appearance:none;
+  appearance:none;
+  min-height:40px;
+  line-height:1.2;
+}
+
+/* checkbox / radio 保留原生操作體驗，只統一主題色與尺寸 */
+input[type="checkbox"],
+input[type="radio"]{
+  accent-color:var(--nav2);
+}
+.agree-row input[type="checkbox"],
+.mode-card input[type="radio"],
+.grade input[type="radio"],
+.grade input[type="checkbox"]{
+  min-width:17px;
+  min-height:17px;
+}
+
+/* Safari Modal 滾動與動態視窗高度 */
+.overlay{
+  min-height:100dvh;
+}
+.modal{
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+/* 清空成功提示 */
+.app-toast{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translate(-50%,-12px);
+  z-index:9999;
+  max-width:min(520px,calc(100vw - 28px));
+  padding:11px 16px;
+  border:1px solid #b8decf;
+  border-radius:10px;
+  background:#e9f7f1;
+  color:#116649;
+  box-shadow:0 10px 28px rgba(22,47,76,.16);
+  font-size:14px;
+  font-weight:900;
+  line-height:1.45;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;
+}
+.app-toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+/* iPhone / iPad Safari：16px 避免點欄位時自動放大 */
+@media(max-width:760px){
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select{
+    font-size:16px!important;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  input[type="date"],
+  select{
+    min-height:44px!important;
+    height:44px!important;
+  }
+  textarea{
+    min-height:84px!important;
+  }
+  input[type="file"]{
+    min-height:44px!important;
+  }
+  .btn,
+  button.btn{
+    min-height:44px!important;
+  }
+  .modal{
+    max-height:calc(100dvh - 16px)!important;
+  }
+  .app-toast{
+    top:12px;
+    font-size:14px;
+  }
+}
+
 </style>
 
 </head>
@@ -2703,6 +2931,26 @@ function fitLegacyPreview(){
  });
  syncLegacyMasterSplit(shell);
 }
+
+let appToastTimer=null;
+function showAppToast(message){
+ let toast=$('appToast');
+ if(!toast){
+   toast=document.createElement('div');
+   toast.id='appToast';
+   toast.className='app-toast';
+   toast.setAttribute('role','status');
+   toast.setAttribute('aria-live','polite');
+   document.body.appendChild(toast);
+ }
+ toast.textContent=message;
+ toast.classList.remove('show');
+ void toast.offsetWidth;
+ toast.classList.add('show');
+ clearTimeout(appToastTimer);
+ appToastTimer=setTimeout(()=>toast.classList.remove('show'),2600);
+}
+
 function modal(title,html){
  $('modalTitle').textContent=title;
  $('modalBody').innerHTML=html;
@@ -4086,11 +4334,35 @@ async function addStore(){
 window.editStore=async(id,name,status)=>{const n=prompt('門市名稱',name);if(n===null)return;const s=prompt('狀態：active / disabled',status);if(s===null)return;const {error}=await sb.from('stores').update({store_name:n.trim(),status:s.trim()}).eq('id',id);if(error)return modal('修改失敗',`<div class="notice warn">${error.message}</div>`);await loadStoresAdmin();await populateLoginStores()}
 
 function updateIdCaptureUI(){
- const count=(idPhotos.front?1:0)+(idPhotos.back?1:0);$('idProgress').textContent=count+' / 2';
+ // Web V4.0：舊版門市端證件拍攝元件已移除。
+ // 保留此函式給既有流程呼叫，但所有 DOM 都採存在性檢查，避免清空時因 null 中斷。
+ const count=(idPhotos.front?1:0)+(idPhotos.back?1:0);
+ const progress=$('idProgress');
+ if(progress)progress.textContent=count+' / 2';
+
  [['front','正面'],['back','反面']].forEach(([side,label])=>{
-  const preview=$(side+'Preview'),state=$(side+'State'),cap=$('capture'+(side==='front'?'Front':'Back')+'Btn'),ret=$('retake'+(side==='front'?'Front':'Back')+'Btn'),rem=$('remove'+(side==='front'?'Front':'Back')+'Btn');
-  if(idPhotos[side]){preview.innerHTML=`<img src="${idPhotos[side]}">`;state.textContent='已完成';state.classList.add('done');cap.classList.add('hidden');ret.classList.remove('hidden');rem.classList.remove('hidden')}
-  else{preview.textContent='請拍攝'+label;state.textContent='尚未拍攝';state.classList.remove('done');cap.classList.remove('hidden');ret.classList.add('hidden');rem.classList.add('hidden')}
+  const preview=$(side+'Preview');
+  const state=$(side+'State');
+  const cap=$('capture'+(side==='front'?'Front':'Back')+'Btn');
+  const ret=$('retake'+(side==='front'?'Front':'Back')+'Btn');
+  const rem=$('remove'+(side==='front'?'Front':'Back')+'Btn');
+
+  // 現行 Web V4.0 沒有這組舊元件時直接略過。
+  if(!preview&&!state&&!cap&&!ret&&!rem)return;
+
+  if(idPhotos[side]){
+   if(preview)preview.innerHTML=`<img src="${idPhotos[side]}">`;
+   if(state){state.textContent='已完成';state.classList.add('done')}
+   if(cap)cap.classList.add('hidden');
+   if(ret)ret.classList.remove('hidden');
+   if(rem)rem.classList.remove('hidden');
+  }else{
+   if(preview)preview.textContent='請拍攝'+label;
+   if(state){state.textContent='尚未拍攝';state.classList.remove('done')}
+   if(cap)cap.classList.remove('hidden');
+   if(ret)ret.classList.add('hidden');
+   if(rem)rem.classList.add('hidden');
+  }
  });
 }
 async function openCamera(side){
@@ -4204,6 +4476,7 @@ async function hardClearCreateForm(event,options={}){
    // 沒有 QR：純前端清空，不碰 Supabase。
    if(!qrSession?.id){
      clearCreateFormLocalOnly();
+     if(options.source!=='system')showAppToast('✓ 已清空，可建立下一筆回收單');
      return true;
    }
 
@@ -4298,6 +4571,7 @@ async function hardClearCreateForm(event,options={}){
 
    // completed + 已有正式回收單，或 cancelled / expired：只清前端，不刪任何正式資料。
    clearCreateFormLocalOnly();
+   if(options.source!=='system')showAppToast('✓ 已清空，可建立下一筆回收單');
    return true;
 
  }catch(err){
