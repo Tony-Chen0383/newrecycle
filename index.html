@@ -3030,7 +3030,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.2.25';
+const APP_VERSION='Web V4.2.26';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -6575,7 +6575,34 @@ $('importLogBtn').onclick=()=>modal('匯入紀錄','<div class="notice info">V1.
 const sideLogo=document.querySelector('.brand img');if($('loginLogo')&&!$('loginLogo').getAttribute('src')&&sideLogo)$('loginLogo').src=sideLogo.src;
 applyPdfFormLogos();
 syncAppVersionUI();
-bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();updateQrPreviewState();renderPriceOverview();const signToken=checkHashSign();if(signToken)loadCustomerSignPage(signToken);else boot();
+
+/* Web V4.2.26｜同一手機連續掃不同 QR 相容
+   iPhone 相機 / Safari 可能沿用既有分頁，只把 #sign=token 換成新 token，
+   不會重新建立新頁面。監聽 hashchange；若偵測到 token 已更換，
+   直接重新載入目前 URL，確保上一筆 completed/cancelled/claim 狀態全部清空。
+   不修改 QR DB 流程、不修改 Signature Core。 */
+let activeCustomerSignToken=null;
+function bootByCurrentRoute(){
+  const token=checkHashSign();
+  if(token){
+    activeCustomerSignToken=token;
+    loadCustomerSignPage(token);
+  }else{
+    boot();
+  }
+}
+window.addEventListener('hashchange',()=>{
+  const nextToken=checkHashSign();
+  if(nextToken && activeCustomerSignToken && nextToken!==activeCustomerSignToken){
+    location.reload();
+    return;
+  }
+  if(nextToken && !activeCustomerSignToken){
+    location.reload();
+  }
+});
+
+bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();updateQrPreviewState();renderPriceOverview();bootByCurrentRoute();
 </script>
 
 </body>
