@@ -2608,86 +2608,6 @@ body.qr-transaction-locked #qrSignSection{
 
 </style>
 
-
-<style id="v431-pdf-golden-master-lock">
-/* =========================================================
-   Web V4.3.1｜PDF GOLDEN MASTER CSS LOCK
-   ---------------------------------------------------------
-   目的：
-   1. V4.3.1 為正式 PDF Golden Master。
-   2. 歷史 .legacy-* CSS 全部保留，不刪除、不重排，避免 cascade 改變。
-   3. 後續 PDF 調整 ONLY 允許在此區塊追加 scoped 規則：
-        #printSheet .v431-pdf-golden-master ...
-   4. 本區目前只鎖「結構」，完全不改字級、列高、欄寬內容或 PDF 縮放演算法。
-   ========================================================= */
-
-/* PDF Capture 外框：與 V4.3.1 原值完全一致 */
-#printSheet .v431-pdf-golden-master.pdf-capture{
-  width:794px;
-  min-height:1123px;
-  display:flex;
-  flex-direction:column;
-  background:#fff;
-}
-
-/* PDF 文件紙張：與 V4.3.1 原值完全一致 */
-#printSheet .v431-pdf-golden-master.pdf-capture > .legacy-doc{
-  width:794px;
-  max-width:none;
-  min-height:1123px;
-  padding:10mm 8mm 5mm;
-  border:0;
-  box-shadow:none;
-  display:flex;
-  flex-direction:column;
-}
-
-/* 主資料表幾何鎖：欄寬仍由原 HTML colgroup 決定 */
-#printSheet .v431-pdf-golden-master .legacy-master-table{
-  width:100%;
-  table-layout:fixed;
-  border-collapse:collapse;
-}
-
-/* 檢測表結構鎖 */
-#printSheet .v431-pdf-golden-master .legacy-detect{
-  width:100%;
-  table-layout:fixed;
-  border-collapse:collapse;
-}
-
-/* 切結/簽名 84.21 / 15.79 結構鎖：與 V4.3.1 原值一致 */
-#printSheet .v431-pdf-golden-master .legacy-declare{
-  display:grid;
-  grid-template-columns:84.21% 15.79%;
-  grid-template-rows:auto 1fr;
-}
-#printSheet .v431-pdf-golden-master .legacy-declare-top{
-  grid-column:1 / span 2;
-  display:grid;
-  grid-template-columns:84.21% 15.79%;
-}
-#printSheet .v431-pdf-golden-master .legacy-declare-body{
-  grid-column:1;
-}
-#printSheet .v431-pdf-golden-master .legacy-sign-col{
-  grid-column:2;
-}
-
-/* Footer 邏輯鎖：V4.3.1 以 auto 將 footer 沉底 */
-#printSheet .v431-pdf-golden-master.pdf-capture .legacy-footer{
-  margin-top:auto;
-  padding-top:2mm;
-}
-
-/*
-  ===== FUTURE PDF PATCH ZONE =====
-  後續若只改「請詳閱下述內容」字級，必須寫在下方，
-  並且只能使用 .v431-pdf-golden-master scope。
-  禁止再回頭修改前方任何 V3.x / V4.2.x 歷史 PDF CSS。
-*/
-</style>
-
 </head>
 <body>
 <div id="customerSignScreen" class="sign-screen hidden"><div class="sign-shell">
@@ -4259,7 +4179,7 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
    </div>`:'';
 
  return printMode
-   ? `<div class="print-page legacy-print-page v431-pdf-golden-master" data-pdf-css-baseline="v4.3.1">${doc}</div>`
+   ? `<div class="print-page legacy-print-page">${doc}</div>`
    : `<div class="legacy-preview-shell">${doc}${attachments}</div>`;
 }
 
