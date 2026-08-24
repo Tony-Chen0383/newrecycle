@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.3</title>
+<title>創宇新機回收管理系統｜Web V4.3.4</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -819,40 +819,40 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 .legacy-print-page .legacy-sign-space{height:19mm}
 .legacy-print-page .legacy-footer{margin-top:3.2mm;font-size:6.2pt}
 
-/* Web V4.3.3｜正式 PDF 自適應 A4 修正版
-   V4.3.2 的固定 1123px 高度會在內容較高時裁切。
-   本版改為「自然內容高度 → 完整擷取 → A4 等比例 Fit」。
+/* Web V4.3.4｜PDF 原比例 A4 修正版
+   重要：
+   1. 保留 V4.3.0 原始 920px 文件寬度 / 欄位 / 字體比例。
+   2. 不把文件改成 794px，避免文字換行後整頁被縮小。
+   3. PDF Capture 使用接近 A4 的 920 × 1301 基準畫布。
+   4. 文件內容從頁首正常開始，頁尾使用 flex 沉底。
 */
-.legacy-print-page.pdf-capture{
-  width:794px;
-  height:auto;
-  min-height:0;
-  overflow:visible;
-  display:block;
+.legacy-print-page.pdf-capture-v434{
+  width:920px;
+  min-width:920px;
+  min-height:1301px;
   background:#fff;
+  display:flex;
+  flex-direction:column;
+  overflow:visible;
 }
-.legacy-print-page.pdf-capture .legacy-doc{
-  width:794px;
-  max-width:none;
-  height:auto;
-  min-height:0;
-  padding:5.5mm 6mm 4mm;
+.legacy-print-page.pdf-capture-v434 .legacy-doc{
+  width:920px;
+  max-width:920px;
+  min-height:1301px;
+  margin:0;
+  padding:16px 22px 12px;
   border:0;
   box-shadow:none;
-  display:block;
+  display:flex;
+  flex-direction:column;
 }
-.legacy-print-page.pdf-capture .legacy-head{
+.legacy-print-page.pdf-capture-v434 .legacy-head{
   margin-top:0;
-  margin-bottom:1.4mm;
 }
-.legacy-print-page.pdf-capture .legacy-head-date{
-  padding-top:0;
-}
-.legacy-print-page.pdf-capture .legacy-footer{
-  margin-top:2.8mm;
-  padding-top:1.2mm;
+.legacy-print-page.pdf-capture-v434 .legacy-footer{
+  margin-top:auto;
+  padding-top:8px;
   padding-bottom:0;
-  line-height:1.25;
 }
 
 
@@ -3069,7 +3069,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.3';
+const APP_VERSION='Web V4.3.4';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4786,28 +4786,36 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
  }
 
  const previousStyle=root.getAttribute('style');
- const hadCaptureClass=page.classList.contains('pdf-capture');
+ const hadCaptureClass=page.classList.contains('pdf-capture-v434');
+
  try{
+   // 保留 V4.3.0 原始 920px 版型，不再縮到 794px。
    root.style.display='block';
    root.style.position='fixed';
    root.style.left='-12000px';
    root.style.top='0';
-   root.style.width='794px';
-   root.style.maxWidth='794px';
+   root.style.width='920px';
+   root.style.minWidth='920px';
+   root.style.maxWidth='920px';
    root.style.background='#fff';
    root.style.zIndex='-9999';
    root.style.pointerEvents='none';
 
-   if(!hadCaptureClass)page.classList.add('pdf-capture');
+   if(!hadCaptureClass)page.classList.add('pdf-capture-v434');
 
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    await waitForPrintAssets(7000);
    syncLegacyMasterSplit(root);
-   await new Promise(resolve=>setTimeout(resolve,80));
+   await new Promise(resolve=>setTimeout(resolve,120));
 
-   // 先取得實際完整內容高度，不再把超出 A4 的內容裁掉。
-   const captureWidth=Math.max(794,page.scrollWidth||0,page.offsetWidth||0);
-   const captureHeight=Math.max(1,page.scrollHeight||0,page.offsetHeight||0);
+   // A4 比例基準：920px × 約1301px。
+   // 若內容真的超過 1301px，只增加 Capture 高度，不裁內容。
+   const captureWidth=920;
+   const captureHeight=Math.max(
+     1301,
+     page.scrollHeight||0,
+     doc.scrollHeight||0
+   );
 
    const canvas=await window.html2canvas(page,{
      scale:2,
@@ -4816,7 +4824,7 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      backgroundColor:'#ffffff',
      logging:false,
      imageTimeout:7000,
-     windowWidth:captureWidth,
+     windowWidth:1200,
      width:captureWidth,
      height:captureHeight,
      scrollX:0,
@@ -4827,6 +4835,33 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
    const {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+   const pageW=210,pageH=297;
+   const canvasRatio=canvas.width/canvas.height;
+   const a4Ratio=pageW/pageH;
+
+   let imgW,imgH,x,y;
+
+   if(Math.abs(canvasRatio-a4Ratio)<0.012){
+     // 正常情況：Capture 本身已接近 A4，直接滿版映射。
+     // 文件內已有自己的安全 padding，因此不另外製造大面積上下空白。
+     imgW=pageW;
+     imgH=pageH;
+     x=0;
+     y=0;
+   }else if(canvasRatio>a4Ratio){
+     // 文件較寬：以寬度為準，絕不裁切。
+     imgW=pageW;
+     imgH=pageW/canvasRatio;
+     x=0;
+     y=(pageH-imgH)/2;
+   }else{
+     // 極端長內容：以高度為準，完整保留、不裁切。
+     imgH=pageH;
+     imgW=pageH*canvasRatio;
+     x=(pageW-imgW)/2;
+     y=0;
+   }
+
    const imgData=canvas.toDataURL('image/jpeg',0.96);
 
    pdf.setProperties({
@@ -4837,23 +4872,11 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      keywords:`${rec.record_no}, recycle, formal-pdf, no-id`
    });
 
-   // V4.3.3：完整內容等比例縮放進 A4。
-   // 不變形、不裁切；上方固定 4mm，左右自動置中，剩餘空間只留在頁尾。
-   const pageW=210,pageH=297;
-   const marginX=4,marginTop=4,marginBottom=4;
-   const maxW=pageW-(marginX*2);
-   const maxH=pageH-marginTop-marginBottom;
-   const mmPerPx=Math.min(maxW/canvas.width,maxH/canvas.height);
-   const imgW=canvas.width*mmPerPx;
-   const imgH=canvas.height*mmPerPx;
-   const x=(pageW-imgW)/2;
-   const y=marginTop;
-
    pdf.addImage(imgData,'JPEG',x,y,imgW,imgH,undefined,'FAST');
    pdf.save(formalPdfFileName(rec));
    return true;
  }finally{
-   if(!hadCaptureClass)page.classList.remove('pdf-capture');
+   if(!hadCaptureClass)page.classList.remove('pdf-capture-v434');
    if(previousStyle===null)root.removeAttribute('style');
    else root.setAttribute('style',previousStyle);
  }
