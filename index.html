@@ -8,10 +8,12 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.2.28</title>
+<title>創宇新機回收管理系統｜Web V4.3.0</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <style>
 :root{
  --nav:#10385f;--nav2:#174f82;--blue:#1d66a5;--bg:#f3f6fa;--card:#fff;
@@ -2796,7 +2798,7 @@ body.qr-transaction-locked #qrSignSection{
     </div>
 
     <div class="actions">
-      <button class="btn gold" id="previewBtn">預覽完整切結書</button><button class="btn light hidden" id="printBtn">列印切結書</button>
+      <button class="btn gold" id="previewBtn">預覽完整切結書</button><button class="btn primary hidden" id="printBtn">下載正式 PDF</button>
       <button type="button" class="btn light" id="clearBtn" onclick="hardClearCreateForm(event)">清空</button>
     </div>
   </section>
@@ -2811,7 +2813,7 @@ body.qr-transaction-locked #qrSignSection{
         <div class="field"><label>開始日期</label><input id="recordStartDate" type="date"></div>
         <div class="field"><label>結束日期</label><input id="recordEndDate" type="date"></div>
       </div>
-      <div class="notice info" style="margin-top:10px">右側回收紀錄可查看正式回收切結書、電子簽名與證件預覽；若列印 / 另存 PDF，仍維持不含證件的正式版本。</div>
+      <div class="notice info" style="margin-top:10px">回收紀錄可進入「雲端完整客資」查看正式交易資料、電子簽名與證件正反面；「正式 PDF」為可下載文件，固定不包含證件影像。</div>
       <div class="actions" style="margin-top:10px"><button class="btn primary" id="searchBtn">查詢</button><button class="btn light" id="recordThisMonthBtn">回到本月</button><button class="btn light">匯出 Excel</button></div>
     </div>
     <div class="card"><div class="tablewrap"><table><thead><tr><th>日期</th><th>製單編號</th><th>門市</th><th>商品</th><th>IMEI</th><th>客戶</th><th>檢測</th><th>金額</th><th>操作</th></tr></thead><tbody id="recordBody"></tbody></table></div></div>
@@ -3031,7 +3033,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.2.28';
+const APP_VERSION='Web V4.3.0';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4134,7 +4136,8 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
    </div>
 
    <div class="legacy-footer">
-     <span>列印時間: ${printTime}</span>
+     <span>文件產生時間: ${printTime}</span>
+     <span>PDF產生版本: ${APP_VERSION}</span>
      <span>創宇數位科技 版權所有．侵害必究 © ${new Date().getFullYear()}</span>
    </div>
  </div>`;
@@ -4146,7 +4149,7 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        ${idFrontUrl?`<div class="legacy-id-card"><b>身分證正面</b><img src="${idFrontUrl}" alt="身分證正面"></div>`:''}
        ${idBackUrl?`<div class="legacy-id-card"><b>身分證反面</b><img src="${idBackUrl}" alt="身分證反面"></div>`:''}
      </div>
-     <div class="legacy-id-note">※ 證件影像僅供系統核對；正式列印／下載 PDF 不包含證件影像。</div>
+     <div class="legacy-id-note">※ 證件影像僅供「雲端完整客資」核對；正式 PDF 不包含證件影像。</div>
    </div>`:'';
 
  return printMode
@@ -4467,7 +4470,7 @@ async function createRecord(){
  $('printBtn').classList.remove('hidden');
  $('archiveStatusBox').classList.remove('hidden');
  $('archiveStatusText').textContent='✓ 完整電子回收資料已留存';
- modal('建立完成',`<div class="notice ok">✓ 正式回收單與完整電子回收資料已留存。<br>製單編號：<b>${escHtml(created.record_no)}</b><br>紙本切結書列印不包含證件影像。</div>`);
+ modal('建立完成',`<div class="notice ok">✓ 正式回收單與完整電子回收資料已留存。<br>製單編號：<b>${escHtml(created.record_no)}</b><br>正式 PDF 固定不包含證件影像；完整證件資料請由「回收紀錄 → 雲端完整客資」查看。</div>`);
 }
 async function previewDeclaration(){
  let signedCompleted=false;
@@ -4542,36 +4545,27 @@ async function printPreparedSheet(){
 }
 async function printDeclaration(){
  if(!lastCreatedRecordNo)return modal('尚未完成回收單','<div class="notice warn">請先完成客戶電子簽署並建立正式回收單。</div>');
- let signatureUrl='',record=null;
+ if(!await requireServerAuth())return;
+
  try{
-   // 正式列印一律以已建立的 recycle_records → sign_session_id 重新抓簽名，
-   // 不再只依賴畫面中的 qrSession，避免正式回收單已建立後簽名沒有套入。
    const {data:rows,error:recordError}=await sb.from('recycle_records').select('*').eq('record_no',lastCreatedRecordNo).limit(1);
    if(recordError)throw recordError;
-   record=rows?.[0]||null;
-   if(record){
-     const assets=await getRecordSignedAssets(record);
-     signatureUrl=assets.signatureUrl||'';
-   }
-   // 極端情況 fallback：若回收紀錄尚未可讀，但目前 QR Session 還在，就直接取該 Session 的簽名。
-   if(!signatureUrl&&qrSession?.id){
-     const {data:s}=await sb.from('sign_sessions').select('signature_path').eq('id',qrSession.id).single();
-     if(s?.signature_path){
-       const {data:signed}=await sb.storage.from('return-documents').createSignedUrl(s.signature_path,300);
-       signatureUrl=signed?.signedUrl||'';
-     }
-   }
- }catch(e){
-   safeProductionError('print_signature_load',e,'PRINT_ASSET_ERROR');
- }
- if(!signatureUrl)return modal('簽名尚未載入','<div class="notice warn">正式回收單已建立，但目前無法讀取電子簽名。請確認網路連線後重新按「列印切結書」，避免列印出沒有簽名的文件。</div>');
- if(record)fillPrintSheetFromRecord(record,signatureUrl);
- else fillPrintSheet(lastCreatedRecordNo,signatureUrl);
+   const record=rows?.[0]||null;
+   if(!record)throw new Error('PDF_FINALIZED_RECORD_REQUIRED');
 
- // 正式切結書已經由 printSheet 固定完成，列印結束後直接清空目前建立回收單頁面，
- // 不保留已完成交易在畫面上，讓門市可直接開始下一筆。
- await printPreparedSheet();
- await resetCurrentOrder();
+   // 新建單下載 PDF 也只取電子簽名，不請求證件 URL。
+   const assets=await getRecordSignedAssets(record,{includeIds:false,ttl:300});
+   if(assets.sessionStatus!=='completed')throw new Error('PDF_SIGN_SESSION_NOT_COMPLETED');
+   if(!assets.signatureUrl)throw new Error('PDF_SIGNATURE_MISSING');
+
+   await createFormalPdfFromRecord(record,assets.signatureUrl);
+
+   // PDF 下載動作已啟動後，沿用舊流程清空目前建立回收單頁面。
+   await resetCurrentOrder();
+ }catch(e){
+   safeProductionError('formal_pdf_after_create',e,'PDF_ERROR');
+   return modal('PDF 產生失敗','<div class="notice warn">正式回收單已建立，但 PDF 尚未成功產生。回收紀錄不受影響，可至「回收紀錄」重新下載正式 PDF。</div>');
+ }
 }
 
 function recordConditionLabel(code){
@@ -4582,23 +4576,34 @@ function recordConditionLabel(code){
 function recordProductName(rec){
  return [rec?.brand_snapshot,rec?.model_snapshot,rec?.spec_snapshot].filter(Boolean).join(' ');
 }
-async function getRecordSignedAssets(rec){
- let signatureUrl='',idFrontUrl='',idBackUrl='';
- if(!rec?.sign_session_id)return {signatureUrl,idFrontUrl,idBackUrl};
+async function getRecordSignedAssets(rec,{includeIds=true,ttl=120}={}){
+ let signatureUrl='',idFrontUrl='',idBackUrl='',sessionStatus='';
+ if(!rec?.sign_session_id)return {signatureUrl,idFrontUrl,idBackUrl,sessionStatus};
  try{
-   const {data:s,error}=await sb.from('sign_sessions').select('signature_path,id_front_path,id_back_path').eq('id',rec.sign_session_id).single();
-   if(error)return {signatureUrl,idFrontUrl,idBackUrl};
-   const pairs=[['signature_path','signatureUrl'],['id_front_path','idFrontUrl'],['id_back_path','idBackUrl']];
+   const fields=includeIds
+     ? 'status,signature_path,id_front_path,id_back_path'
+     : 'status,signature_path';
+   const {data:s,error}=await sb.from('sign_sessions').select(fields).eq('id',rec.sign_session_id).single();
+   if(error)return {signatureUrl,idFrontUrl,idBackUrl,sessionStatus};
+   sessionStatus=s?.status||'';
+   if(sessionStatus!=='completed')return {signatureUrl,idFrontUrl,idBackUrl,sessionStatus};
+
+   const pairs=[['signature_path','signatureUrl']];
+   if(includeIds){
+     pairs.push(['id_front_path','idFrontUrl'],['id_back_path','idBackUrl']);
+   }
    for(const [field,target] of pairs){
      if(!s?.[field])continue;
-     const {data:signed}=await sb.storage.from('return-documents').createSignedUrl(s[field],300);
+     const {data:signed}=await sb.storage.from('return-documents').createSignedUrl(s[field],ttl);
      const url=signed?.signedUrl||'';
      if(target==='signatureUrl')signatureUrl=url;
      if(target==='idFrontUrl')idFrontUrl=url;
      if(target==='idBackUrl')idBackUrl=url;
    }
- }catch(e){}
- return {signatureUrl,idFrontUrl,idBackUrl};
+ }catch(e){
+   safeProductionError('record_signed_assets',e,'ASSET_LOAD_ERROR');
+ }
+ return {signatureUrl,idFrontUrl,idBackUrl,sessionStatus};
 }
 function recordLegacyDeclarationData(rec){
  return {
@@ -4646,7 +4651,7 @@ async function loadRecords(){
    <td>${escHtml(r.customer_name||'')}</td>
    <td>${escHtml(recordConditionLabel(r.condition_code))}</td>
    <td>${escHtml(money(r.actual_amount))}</td>
-   <td><div class="actions" style="gap:6px;flex-wrap:nowrap"><button class="btn light" data-view-record="${escHtml(r.id)}">查看</button><button class="btn primary" data-print-record="${escHtml(r.id)}">重印切結書</button></div></td>
+   <td><div class="actions" style="gap:6px;flex-wrap:nowrap"><button class="btn light" data-view-record="${escHtml(r.id)}">查看</button><button class="btn primary" data-print-record="${escHtml(r.id)}">下載正式 PDF</button></div></td>
  </tr>`).join('')||'<tr><td colspan="9" class="sub" style="text-align:center;padding:18px">查無資料</td></tr>';
  $('recordBody').querySelectorAll('[data-view-record]').forEach(btn=>btn.addEventListener('click',()=>viewRecord(btn.dataset.viewRecord)));
  $('recordBody').querySelectorAll('[data-print-record]').forEach(btn=>btn.addEventListener('click',()=>printRecordPdf(btn.dataset.printRecord)));
@@ -4664,26 +4669,169 @@ window.viewRecord=async id=>{
    <div><b>檢測等級</b><p>${escHtml(recordConditionLabel(data.condition_code))}</p></div>
    <div><b>實際回收價</b><p>${escHtml(money(data.actual_amount))}</p></div>
    <div><b>買受日期</b><p>${escHtml(data.buy_date||'')}</p></div>
- </div><div class="notice info" style="margin-top:12px">可查看正式回收切結書（含簽名與證件預覽）；若列印／另存 PDF，系統仍使用不含證件的正式版本。</div><div class="actions" style="margin-top:14px"><button class="btn primary" id="recordPreviewBtn">查看正式切結書</button><button class="btn light" id="recordPdfBtn">重印切結書 / 另存 PDF（無證件）</button></div>`);
+ </div>
+ <div class="notice info" style="margin-top:12px">
+   <b>雲端完整客資</b>：僅在授權登入狀態下即時讀取 Private Storage，證件正反面使用短效 Signed URL，不建立公開網址。<br>
+   <b>正式 PDF</b>：固定只產生正式交易資料＋電子簽名，不包含證件正反面。
+ </div>
+ <div class="actions" style="margin-top:14px">
+   <button class="btn gold" id="recordPreviewBtn">查看雲端完整客資</button>
+   <button class="btn primary" id="recordPdfBtn">下載正式 PDF</button>
+ </div>`);
  $('recordPreviewBtn')?.addEventListener('click',()=>viewRecordDeclaration(id));
  $('recordPdfBtn')?.addEventListener('click',()=>printRecordPdf(id));
 }
 window.viewRecordDeclaration=async id=>{
+ if(!await requireServerAuth())return;
  const {data,error}=await sb.from('recycle_records').select('*').eq('id',id).single();
  if(error)return backendFailureModal('查詢失敗','records_query',error);
- const assets=await getRecordSignedAssets(data);
- const extraNote=`<div class="actions" style="margin-top:16px;justify-content:flex-end;border-top:1px solid #e5e7eb;padding-top:14px"><button class="btn light" id="recordPreviewBackBtn">返回</button><button class="btn primary" id="recordPreviewPdfBtn">重印切結書 / 另存 PDF（無證件）</button></div>`;
- modal('正式回收切結書預覽',declarationHtmlForRecord(data,assets.signatureUrl,assets.idFrontUrl,assets.idBackUrl)+extraNote);
+
+ // 完整客資入口才要求證件 Signed URL；效期縮短為 120 秒。
+ const assets=await getRecordSignedAssets(data,{includeIds:true,ttl:120});
+ if(assets.sessionStatus!=='completed'){
+   return modal('電子留存尚未完成','<div class="notice warn">此筆交易尚未具備 completed 電子簽署狀態，系統不開啟完整客資附件。</div>');
+ }
+
+ const missing=[];
+ if(!assets.signatureUrl)missing.push('電子簽名');
+ if(!assets.idFrontUrl)missing.push('證件正面');
+ if(!assets.idBackUrl)missing.push('證件反面');
+ const assetNote=missing.length
+   ? `<div class="notice warn" style="margin-top:12px">目前無法載入：${escHtml(missing.join('、'))}。請確認網路與 Storage 權限後重新開啟。</div>`
+   : `<div class="notice ok" style="margin-top:12px">✓ 完整電子附件已由 Private Storage 暫時載入。證件連結為短效連結，不會寫入正式 PDF。</div>`;
+
+ const extraNote=`${assetNote}
+ <div class="notice info" style="margin-top:10px">
+   此畫面為<b>雲端完整客資</b>，僅供公司授權人員核對。證件影像不會複製進正式 PDF，也不建立永久公開網址。
+ </div>
+ <div class="actions" style="margin-top:16px;justify-content:flex-end;border-top:1px solid #e5e7eb;padding-top:14px">
+   <button class="btn light" id="recordPreviewBackBtn">返回</button>
+   <button class="btn primary" id="recordPreviewPdfBtn">下載正式 PDF（無證件）</button>
+ </div>`;
+ modal(`雲端完整客資｜${escHtml(data.record_no||'')}`,declarationHtmlForRecord(data,assets.signatureUrl,assets.idFrontUrl,assets.idBackUrl)+extraNote);
  $('recordPreviewBackBtn')?.addEventListener('click',closeModal);
  $('recordPreviewPdfBtn')?.addEventListener('click',()=>printRecordPdf(id));
 }
+function formalPdfFileName(rec){
+ const safeNo=String(rec?.record_no||'RECYCLE').replace(/[\\/:*?"<>|]/g,'_');
+ return `創宇新機回收_正式切結書_${safeNo}.pdf`;
+}
+async function signedImageToDataUrl(url){
+ if(!url)return '';
+ const res=await fetch(url,{cache:'no-store',credentials:'omit'});
+ if(!res.ok)throw new Error('PDF_SIGNATURE_FETCH_FAILED');
+ const blob=await res.blob();
+ return await new Promise((resolve,reject)=>{
+   const fr=new FileReader();
+   fr.onload=()=>resolve(String(fr.result||''));
+   fr.onerror=()=>reject(new Error('PDF_SIGNATURE_READ_FAILED'));
+   fr.readAsDataURL(blob);
+ });
+}
+async function createFormalPdfFromRecord(rec,signatureUrl){
+ if(!rec?.id||!rec?.record_no||!rec?.sign_session_id){
+   throw new Error('PDF_FINALIZED_RECORD_REQUIRED');
+ }
+ if(typeof window.html2canvas!=='function'||!window.jspdf?.jsPDF){
+   throw new Error('PDF_LIBRARY_NOT_READY');
+ }
+
+ // PDF 只使用 finalized recycle_records + completed sign_session 的電子簽名。
+ // 證件正反面在此流程完全不請求、不產生 Signed URL，也不會寫入 PDF DOM。
+ const signatureDataUrl=await signedImageToDataUrl(signatureUrl);
+ fillPrintSheetFromRecord(rec,signatureDataUrl);
+
+ const root=$('printSheet');
+ const page=root?.querySelector('.legacy-print-page');
+ if(!root||!page)throw new Error('PDF_TEMPLATE_NOT_READY');
+ if(root.querySelector('.legacy-id-attachments')){
+   throw new Error('PDF_ID_ATTACHMENT_GUARD');
+ }
+
+ const previousStyle=root.getAttribute('style');
+ try{
+   root.style.display='block';
+   root.style.position='fixed';
+   root.style.left='-12000px';
+   root.style.top='0';
+   root.style.width='920px';
+   root.style.maxWidth='920px';
+   root.style.background='#fff';
+   root.style.zIndex='-9999';
+   root.style.pointerEvents='none';
+
+   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   await waitForPrintAssets(7000);
+   syncLegacyMasterSplit(root);
+   await new Promise(resolve=>setTimeout(resolve,120));
+
+   const canvas=await window.html2canvas(page,{
+     scale:2,
+     useCORS:true,
+     allowTaint:false,
+     backgroundColor:'#ffffff',
+     logging:false,
+     imageTimeout:7000,
+     windowWidth:1200,
+     scrollX:0,
+     scrollY:0
+   });
+
+   if(!canvas?.width||!canvas?.height)throw new Error('PDF_RENDER_EMPTY');
+
+   const {jsPDF}=window.jspdf;
+   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+   const pageW=210,pageH=297,margin=5,maxW=pageW-margin*2,maxH=pageH-margin*2;
+   let imgW=maxW;
+   let imgH=canvas.height*imgW/canvas.width;
+   if(imgH>maxH){
+     imgH=maxH;
+     imgW=canvas.width*imgH/canvas.height;
+   }
+   const x=(pageW-imgW)/2;
+   const y=(pageH-imgH)/2;
+   const imgData=canvas.toDataURL('image/jpeg',0.96);
+
+   pdf.setProperties({
+     title:`Formal Recycle Declaration ${rec.record_no}`,
+     subject:'Smart mobile formal recycle declaration - no ID images',
+     author:'Smart mobile',
+     creator:`Smart mobile Recycle System ${APP_VERSION}`,
+     keywords:`${rec.record_no}, recycle, formal-pdf, no-id`
+   });
+   pdf.addImage(imgData,'JPEG',x,y,imgW,imgH,undefined,'FAST');
+   pdf.save(formalPdfFileName(rec));
+   return true;
+ }finally{
+   if(previousStyle===null)root.removeAttribute('style');
+   else root.setAttribute('style',previousStyle);
+ }
+}
+
 window.printRecordPdf=async id=>{
+ if(!await requireServerAuth())return;
  const {data,error}=await sb.from('recycle_records').select('*').eq('id',id).single();
  if(error)return backendFailureModal('查詢失敗','records_query',error);
- const assets=await getRecordSignedAssets(data);
- if(!assets.signatureUrl)return modal('簽名尚未載入','<div class="notice warn">目前無法讀取此筆回收紀錄的電子簽名，請確認網路連線後再重印，避免產生沒有簽名的文件。</div>');
- fillPrintSheetFromRecord(data,assets.signatureUrl);
- await printPreparedSheet();
+
+ // 正式 PDF 最小權限：只取得 completed 狀態與電子簽名，不取得證件路徑。
+ const assets=await getRecordSignedAssets(data,{includeIds:false,ttl:300});
+ if(assets.sessionStatus!=='completed'){
+   return modal('PDF 無法產生','<div class="notice warn">此筆交易尚未完成電子簽署，正式 PDF 不允許產生。</div>');
+ }
+ if(!assets.signatureUrl){
+   return modal('簽名尚未載入','<div class="notice warn">目前無法讀取此筆正式回收紀錄的電子簽名，為避免產生不完整文件，系統已停止 PDF 輸出。</div>');
+ }
+
+ try{
+   await createFormalPdfFromRecord(data,assets.signatureUrl);
+ }catch(e){
+   safeProductionError('formal_pdf',e,'PDF_ERROR');
+   const code=String(e?.message||'');
+   const hint=code==='PDF_LIBRARY_NOT_READY'
+     ? 'PDF 元件尚未完成載入，請確認網路連線後重新整理頁面。'
+     : 'PDF 產生失敗，系統沒有建立含證件的替代文件。請重新嘗試。';
+   return modal('PDF 產生失敗',`<div class="notice warn">${escHtml(hint)}</div>`);
+ }
 }
 
 
