@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.20</title>
+<title>創宇新機回收管理系統｜Web V4.3.21</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2611,7 +2611,7 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.20｜PDF 高解析文字渲染版
+   Web V4.3.21｜PDF 字體裁切與擁擠分區修正版
    僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.20';
+const APP_VERSION='Web V4.3.21';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4148,25 +4148,25 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        <th class="bar legacy-master-right-title" colspan="6">◇ 個人一時貿易申報表 ◆</th>
      </tr>
      <tr class="legacy-master-r1">
-       <td class="lab">分店名稱</td><td>${d.store||''}</td>
+       <td class="lab">分店名稱</td><td class="legacy-data-single">${d.store||''}</td>
        <td class="lab legacy-mini-head">申報單位統編</td><td class="lab legacy-mini-head">所得給付年度</td><td class="lab legacy-mini-head" colspan="2">格式代號及所得類別</td><td class="lab legacy-mini-head">製單編號</td><td class="lab legacy-mini-head">稽核機關</td>
      </tr>
      <tr class="legacy-master-r2">
-       <td class="lab">承辦人員</td><td>${d.clerk||''}</td>
-       <td class="legacy-center">25166891</td><td></td><td class="legacy-center" colspan="2">71營利所得</td><td></td><td></td>
+       <td class="lab">承辦人員</td><td class="legacy-data-single">${d.clerk||''}</td>
+       <td class="legacy-center legacy-data-single">25166891</td><td></td><td class="legacy-center legacy-data-single" colspan="2">71營利所得</td><td></td><td></td>
      </tr>
      <tr class="legacy-master-r3">
        <td class="lab">商品名稱</td><td class="legacy-product-fit ${productFit}">${productHtml}</td>
-       <td class="lab">所得人姓名</td><td colspan="3">${d.customer||''}</td><td class="lab">所得人統編</td><td class="legacy-id-cell">${d.customerId||''}</td>
+       <td class="lab">所得人姓名</td><td class="legacy-data-single" colspan="3">${d.customer||''}</td><td class="lab">所得人統編</td><td class="legacy-id-cell legacy-data-single">${d.customerId||''}</td>
      </tr>
      <tr class="legacy-master-r4">
        <td class="lab" rowspan="2">IMEI</td>
        <td class="legacy-imei-cell" rowspan="2"><div class="legacy-imei-wrap">${barcodeSvg(imei)}<div class="legacy-imei-num">${imei}</div></div></td>
        <td class="lab" rowspan="2">所得人地址</td><td class="legacy-address-cell" colspan="3" rowspan="2">${d.address||''}</td>
-       <td class="lab">買受日期</td><td>${d.buyDate||''}</td>
+       <td class="lab">買受日期</td><td class="legacy-data-single">${d.buyDate||''}</td>
      </tr>
      <tr class="legacy-master-r5">
-       <td class="lab">買受原因</td><td>${d.buyReason||'進貨'}</td>
+       <td class="lab">買受原因</td><td class="legacy-data-single">${d.buyReason||'進貨'}</td>
      </tr>
      <tr class="legacy-master-r6">
        <td class="amount-lab">回收金額</td><td class="amount-val">${amountText}</td>
@@ -4177,20 +4177,20 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        <td class="legacy-product-fit legacy-goods-fit ${productFit}" colspan="2">${productHtml}</td><td class="legacy-center">${amountText}</td><td class="legacy-center">1</td><td class="legacy-center">${amountText}</td><td class="legacy-center">${amountText}</td>
      </tr>
      <tr class="legacy-master-r8">
-       <td class="lab">姓名</td><td>${d.customer||''}</td>
+       <td class="lab">姓名</td><td class="legacy-data-single">${d.customer||''}</td>
        <td class="lab" colspan="4">申報單位</td><td class="lab" colspan="2">掃描編號</td>
      </tr>
      <tr class="legacy-master-r9">
-       <td class="lab">身分證字號</td><td>${d.customerId||''}</td>
-       <td class="lab">名稱</td><td colspan="3">創宇數位科技有限公司</td><td class="legacy-scan-cell" colspan="2" rowspan="3"></td>
+       <td class="lab">身分證字號</td><td class="legacy-data-single">${d.customerId||''}</td>
+       <td class="lab">名稱</td><td class="legacy-data-single" colspan="3">創宇數位科技有限公司</td><td class="legacy-scan-cell" colspan="2" rowspan="3"></td>
      </tr>
      <tr class="legacy-master-r10">
-       <td class="lab">聯絡電話</td><td>${d.phone||''}</td>
+       <td class="lab">聯絡電話</td><td class="legacy-data-single">${d.phone||''}</td>
        <td class="lab">地址</td><td colspan="3">桃園市中壢區中山東路一段336-2號2樓</td>
      </tr>
      <tr class="legacy-master-r11">
        <td class="lab" rowspan="2">地址</td><td rowspan="2">${d.address||''}</td>
-       <td class="lab">負責人</td><td colspan="3">莊涵凱</td>
+       <td class="lab">負責人</td><td class="legacy-data-single" colspan="3">莊涵凱</td>
      </tr>
      <tr class="legacy-master-r12">
        <td class="legacy-unit-note" colspan="6">※本表僅限於營利事業向依法免辦營業登記，且非經買賣商品個人購買商品者使用。<br>第1聯：報核（存根）聯　　申報單位存查</td>
@@ -7001,15 +7001,13 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 </script>
 
 
-<style id="v4320-pdf-hires-text-render">
+<style id="v4321-pdf-zoned-text-fix">
 /* =========================================================
-   Web V4.3.20｜PDF 高解析文字渲染
-   基底：V4.3.19
-   原則：
-   1. 主要字級全部使用整數 px。
-   2. line-height 使用整數 px，減少 Safari + Zoom + html2canvas 小數 rounding。
-   3. 保留 V4.3.19 光學置中，不使用 transform / position 位移。
-   4. 不改欄寬、列高、Zoom、Capture、A4。
+   Web V4.3.21｜PDF 字體裁切與擁擠分區修正
+   重點：
+   - 不再對所有 cell 套「上3 / 下5」的全域光學位移。
+   - 標題格、單行資料、多行資料、商品名稱，各自使用自己的安全 line box。
+   - 不改欄寬、列高、Zoom、Capture、A4。
    ========================================================= */
 
 .legacy-print-page.pdf-capture .legacy-doc{
@@ -7019,12 +7017,11 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
   text-rendering:geometricPrecision!important;
 }
 
-/* ---------- 上半部主表 ---------- */
 .legacy-print-page.pdf-capture .legacy-master-table{
   font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
   font-size:10px!important;
   font-weight:400!important;
-  line-height:12px!important;
+  line-height:14px!important;
   letter-spacing:0!important;
 }
 
@@ -7032,59 +7029,101 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 .legacy-print-page.pdf-capture .legacy-master-table th{
   font-family:inherit!important;
   vertical-align:middle!important;
-  letter-spacing:0!important;
   font-synthesis:none!important;
 }
 
-/* V4.3.19 光學置中保留：
-   總 padding 不變，只讓字心視覺上移約 1px */
-.legacy-print-page.pdf-capture .legacy-master-table td:not(.legacy-imei-cell):not(.legacy-unit-note):not(.legacy-scan-cell),
-.legacy-print-page.pdf-capture .legacy-master-table th:not(.bar){
-  padding-top:3px!important;
-  padding-bottom:5px!important;
-}
-
-/* 一般資料 */
-.legacy-print-page.pdf-capture .legacy-master-table td:not(.lab):not(.amount-val):not(.legacy-imei-cell):not(.legacy-scan-cell){
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:12px!important;
-}
-
-/* 一般標題 */
+/* =========================================================
+   A. 標題格
+   - 對稱 padding
+   - 14px line box 給中文字完整上下空間
+   - 不再用 optical shift
+   ========================================================= */
 .legacy-print-page.pdf-capture .legacy-master-table .lab{
   font-size:10px!important;
   font-weight:600!important;
-  line-height:11px!important;
+  line-height:14px!important;
+  letter-spacing:0!important;
   text-align:center!important;
   vertical-align:middle!important;
-  letter-spacing:0!important;
+  padding-top:4px!important;
+  padding-bottom:4px!important;
+  padding-left:5px!important;
+  padding-right:5px!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
 }
 
-/* 右上 mini 標題 */
+/* 窄格 mini 標題單獨處理，不跟一般 label 共用高度感 */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-mini-head{
   font-size:8px!important;
   font-weight:600!important;
-  line-height:10px!important;
-  white-space:nowrap!important;
+  line-height:11px!important;
+  letter-spacing:0!important;
+  text-align:center!important;
+  vertical-align:middle!important;
+  padding-top:4px!important;
+  padding-bottom:4px!important;
   padding-left:2px!important;
   padding-right:2px!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
 }
 
-/* 藍底主標題 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-left-title,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-right-title,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-seller-bar{
+/* =========================================================
+   B. 短單行資料
+   例如：中壢站、S123456789、日期、電話、姓名
+   ========================================================= */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-data-single{
   font-size:10px!important;
-  font-weight:700!important;
-  line-height:12px!important;
+  font-weight:400!important;
+  line-height:14px!important;
+  letter-spacing:.12px!important;
+  vertical-align:middle!important;
+  padding-top:4px!important;
+  padding-bottom:4px!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+/* ID / 統編不再另外縮字，避免同一列尺寸跳動 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-id-cell{
+  font-size:10px!important;
+  font-weight:400!important;
+  line-height:14px!important;
+  letter-spacing:.14px!important;
+}
+
+/* 原本 legacy-center 內的金額/數字仍維持中間對齊 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-center{
+  font-size:10px!important;
+  font-weight:400!important;
+  line-height:14px!important;
+  vertical-align:middle!important;
+  letter-spacing:.08px!important;
+}
+
+/* =========================================================
+   C. 多行資料
+   地址不能套 nowrap，也不做額外位移
+   ========================================================= */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell{
+  font-size:10px!important;
+  font-weight:400!important;
+  line-height:14px!important;
   letter-spacing:0!important;
   vertical-align:middle!important;
-  padding-top:0!important;
-  padding-bottom:2px!important;
+  padding-top:4px!important;
+  padding-bottom:4px!important;
 }
 
-/* 商品名稱：固定整數字級，不再出現小數 glyph rounding */
+/* =========================================================
+   D. 商品名稱
+   固定 9px，保留 <wbr>；給 12px line box，避免中文字上/下緣裁切
+   ========================================================= */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-md,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-sm,
@@ -7093,64 +7132,70 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-md,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-sm,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-xs{
-  font-family:inherit!important;
   font-size:9px!important;
   font-weight:400!important;
-  line-height:11px!important;
+  line-height:12px!important;
   letter-spacing:0!important;
   white-space:normal!important;
   overflow-wrap:normal!important;
   word-break:normal!important;
-}
-
-/* 身分證／日期／地址／一般置中資料 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-id-cell,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-center{
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:12px!important;
-  letter-spacing:0!important;
-}
-
-/* 金額 */
-.legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
-  font-size:10px!important;
-  font-weight:700!important;
-  line-height:11px!important;
   vertical-align:middle!important;
+  padding-top:3px!important;
+  padding-bottom:3px!important;
 }
-.legacy-print-page.pdf-capture .legacy-master-table .amount-val{
-  font-family:inherit!important;
-  font-size:12px!important;
+
+/* =========================================================
+   E. 藍底主標題
+   不再做上下不對稱 padding
+   ========================================================= */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-left-title,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-right-title,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-seller-bar{
+  font-size:10px!important;
   font-weight:700!important;
   line-height:14px!important;
   letter-spacing:0!important;
   vertical-align:middle!important;
+  padding-top:3px!important;
+  padding-bottom:3px!important;
 }
 
-/* IMEI 號碼 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-imei-num{
-  font-family:inherit!important;
-  font-size:8px!important;
-  font-weight:400!important;
-  line-height:9px!important;
+/* =========================================================
+   F. 金額 / IMEI / 備註
+   ========================================================= */
+.legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
+  font-size:10px!important;
+  font-weight:700!important;
+  line-height:14px!important;
+  vertical-align:middle!important;
+}
+.legacy-print-page.pdf-capture .legacy-master-table .amount-val{
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:16px!important;
   letter-spacing:0!important;
-  margin-top:-2px!important;
+  vertical-align:middle!important;
 }
-
-/* 法規備註 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-unit-note{
-  font-family:inherit!important;
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-imei-num{
   font-size:8px!important;
   font-weight:400!important;
   line-height:10px!important;
+  letter-spacing:.08px!important;
+  margin-top:-1px!important;
+}
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-unit-note{
+  font-size:8px!important;
+  font-weight:400!important;
+  line-height:11px!important;
   letter-spacing:0!important;
   padding-top:4px!important;
-  padding-bottom:6px!important;
+  padding-bottom:4px!important;
 }
 
-/* ---------- A～E 檢測格 ---------- */
+/* =========================================================
+   G. A～E 檢測格
+   使用對稱 padding，不再做視覺上移
+   ========================================================= */
 .legacy-print-page.pdf-capture .legacy-grade-choices{
   gap:1.1mm!important;
 }
@@ -7158,11 +7203,11 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
   font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
   font-size:9px!important;
   font-weight:400!important;
-  line-height:11px!important;
+  line-height:12px!important;
   letter-spacing:0!important;
   border:1px solid #a9b8c8!important;
   border-radius:3px!important;
-  padding:3px 3px 5px!important;
+  padding:4px 3px!important;
   background:#fff!important;
   color:#2b3847!important;
   box-shadow:none!important;
@@ -7173,36 +7218,13 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
   border-color:#4b84ba!important;
   color:#124f8d!important;
   font-weight:600!important;
-  box-shadow:none!important;
 }
 .legacy-print-page.pdf-capture .legacy-grade-choice .box{
   font-weight:600!important;
   margin-right:2px!important;
 }
 
-/* ---------- 下方切結藍色標題列 ----------
-   僅把既有小數字級收斂為整數，正文不動。 */
-.legacy-print-page.pdf-capture .legacy-declare-top-left{
-  font-size:8px!important;
-  font-weight:800!important;
-  line-height:10px!important;
-  padding-top:0!important;
-  padding-bottom:2px!important;
-  align-items:center!important;
-}
-.legacy-print-page.pdf-capture .legacy-declare-top-left .read{
-  font-size:8px!important;
-  font-weight:800!important;
-  line-height:10px!important;
-}
-.legacy-print-page.pdf-capture .legacy-declare-top-right{
-  font-size:8px!important;
-  font-weight:800!important;
-  line-height:10px!important;
-  padding-top:0!important;
-  padding-bottom:2px!important;
-  align-items:center!important;
-}
+/* 下方切結書正文沿用既有穩定設定，不加入這次分區規則。 */
 </style>
 </body>
 </html>
