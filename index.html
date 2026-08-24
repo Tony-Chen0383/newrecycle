@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Web Beta v1.0：空值代表 PDF API 與 Web 同源；若分開部署，填入 HTTPS API Origin -->
+<meta name="formal-pdf-api-base" content="">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.22</title>
+<title>創宇新機回收管理系統｜Web Beta v1.0</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <style>
 :root{
  --nav:#10385f;--nav2:#174f82;--blue:#1d66a5;--bg:#f3f6fa;--card:#fff;
@@ -2611,9 +2611,9 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.22｜V4.3.14基準・288PPI高解析光學置中版
-   僅作用於正式 PDF Capture。
-   不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
+   Web Beta v1.0｜Legacy print style retained but inactive
+   原生正式 PDF 已改由 HTTP API / Native Renderer 產生。
+   此區僅保留既有預覽樣式，避免 Beta 一次刪除過多 DOM/CSS。
    ========================================================= */
 
 /* ① 一般欄位標籤：字級不動，只把黑度從偏重改成正式文件層級 */
@@ -2880,7 +2880,7 @@ body.qr-transaction-locked #qrSignSection{
         <div class="field"><label>開始日期</label><input id="recordStartDate" type="date"></div>
         <div class="field"><label>結束日期</label><input id="recordEndDate" type="date"></div>
       </div>
-      <div class="notice info" style="margin-top:10px">回收紀錄可進入「雲端完整客資」查看正式交易資料、電子簽名與證件正反面；「正式 PDF」為可下載文件，固定不包含證件影像。</div>
+      <div class="notice info" style="margin-top:10px">回收紀錄可進入「雲端完整客資」查看正式交易資料、電子簽名與證件正反面；「正式 PDF」改由原生 PDF 服務產生，固定不包含證件影像。</div>
       <div class="actions" style="margin-top:10px"><button class="btn primary" id="searchBtn">查詢</button><button class="btn light" id="recordThisMonthBtn">回到本月</button><button class="btn light">匯出 Excel</button></div>
     </div>
     <div class="card"><div class="tablewrap"><table><thead><tr><th>日期</th><th>製單編號</th><th>門市</th><th>商品</th><th>IMEI</th><th>客戶</th><th>檢測</th><th>金額</th><th>操作</th></tr></thead><tbody id="recordBody"></tbody></table></div></div>
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.22';
+const APP_VERSION='Web Beta v1.0';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -3114,7 +3114,7 @@ const URL_KEY='smartmobile_supabase_url';
 const PUB_KEY='smartmobile_supabase_publishable_key';
 const EMBEDDED_SUPABASE_URL='https://zbmesuwyhbdmyyywkadi.supabase.co';
 const EMBEDDED_SUPABASE_KEY='sb_publishable_ADJ4Kz4t-96EeUkLVEhn7Q_TLveAriq';
-let sb=null,currentUser=null,currentStore=null,products=[],prices=[],idPhotos={front:null,back:null},cameraStream=null,cameraSide=null,lastCreatedRecordNo=null;
+let sb=null,currentUser=null,currentStore=null,products=[],prices=[],idPhotos={front:null,back:null},cameraStream=null,cameraSide=null,lastCreatedRecordNo=null,lastCreatedRecordId=null;
 
 const ROLE_LABEL={store_staff:'門市人員',store_manager:'門市主管',hq_admin:'總公司管理員'};
 const ROLE_CODE={'門市人員':'store_staff','門市主管':'store_manager','總公司管理員':'hq_admin'};
@@ -3607,6 +3607,7 @@ function clearCustomerSigningLocalState(){
  ['customer','customerId','phone','address'].forEach(id=>{if($(id))$(id).value=''});
  customerIdFiles={front:null,back:null};
  lastCreatedRecordNo=null;
+ lastCreatedRecordId=null;
  resetQrLocalUi();
  markPreviewDirty();
 }
@@ -4554,6 +4555,7 @@ async function createRecord(){
  }
 
  lastCreatedRecordNo=created.record_no;
+ lastCreatedRecordId=created.id||null;
  $('docNo').value=created.record_no;
  $('printBtn').classList.remove('hidden');
  $('archiveStatusBox').classList.remove('hidden');
@@ -4632,27 +4634,42 @@ async function printPreparedSheet(){
  window.print();
 }
 async function printDeclaration(){
- if(!lastCreatedRecordNo)return modal('尚未完成回收單','<div class="notice warn">請先完成客戶電子簽署並建立正式回收單。</div>');
+ if(!lastCreatedRecordNo && !lastCreatedRecordId){
+   return modal('尚未完成回收單','<div class="notice warn">請先完成客戶電子簽署並建立正式回收單。</div>');
+ }
  if(!await requireServerAuth())return;
 
  try{
-   const {data:rows,error:recordError}=await sb.from('recycle_records').select('*').eq('record_no',lastCreatedRecordNo).limit(1);
-   if(recordError)throw recordError;
-   const record=rows?.[0]||null;
-   if(!record)throw new Error('PDF_FINALIZED_RECORD_REQUIRED');
+   let recordId=lastCreatedRecordId;
 
-   // 新建單下載 PDF 也只取電子簽名，不請求證件 URL。
-   const assets=await getRecordSignedAssets(record,{includeIds:false,ttl:300});
-   if(assets.sessionStatus!=='completed')throw new Error('PDF_SIGN_SESSION_NOT_COMPLETED');
-   if(!assets.signatureUrl)throw new Error('PDF_SIGNATURE_MISSING');
+   // 相容 Beta 切換前已完成、但本機尚未保存 record_id 的狀況。
+   // 只以正式 record_no 找回 id；不使用目前 DOM 重建 PDF 資料。
+   if(!recordId && lastCreatedRecordNo){
+     const {data:rows,error}=await sb
+       .from('recycle_records')
+       .select('id')
+       .eq('record_no',lastCreatedRecordNo)
+       .limit(1);
+     if(error)throw error;
+     recordId=rows?.[0]?.id||null;
+   }
 
-   await createFormalPdfFromRecord(record,assets.signatureUrl);
+   if(!recordId)throw new Error('PDF_RECORD_ID_REQUIRED');
 
-   // PDF 下載動作已啟動後，沿用舊流程清空目前建立回收單頁面。
+   await downloadNativeFormalPdf(recordId);
+
+   // 原生 PDF 已成功下載後才清空建立頁。
    await resetCurrentOrder();
  }catch(e){
-   safeProductionError('formal_pdf_after_create',e,'PDF_ERROR');
-   return modal('PDF 產生失敗','<div class="notice warn">正式回收單已建立，但 PDF 尚未成功產生。回收紀錄不受影響，可至「回收紀錄」重新下載正式 PDF。</div>');
+   safeProductionError('native_formal_pdf_after_create',e,'PDF_API_ERROR');
+   return modal(
+     '正式 PDF 下載失敗',
+     `<div class="notice warn">${escHtml(formalPdfErrorHint(String(e?.message||'')))}</div>
+      <div class="notice info" style="margin-top:10px">
+        正式回收單已建立且不受影響。請至「回收紀錄」重新下載正式 PDF。
+        系統不會自動退回舊版截圖式 PDF。
+      </div>`
+   );
  }
 }
 
@@ -4794,7 +4811,7 @@ window.viewRecordDeclaration=async id=>{
  </div>
  <div class="actions" style="margin-top:16px;justify-content:flex-end;border-top:1px solid #e5e7eb;padding-top:14px">
    <button class="btn light" id="recordPreviewBackBtn">返回</button>
-   <button class="btn primary" id="recordPreviewPdfBtn">下載正式 PDF（無證件）</button>
+   <button class="btn primary" id="recordPreviewPdfBtn">下載正式 PDF</button>
  </div>`;
  modal(`雲端完整客資｜${escHtml(data.record_no||'')}`,declarationHtmlForRecord(data,assets.signatureUrl,assets.idFrontUrl,assets.idBackUrl)+extraNote);
  $('recordPreviewBackBtn')?.addEventListener('click',closeModal);
@@ -4804,239 +4821,133 @@ function formalPdfFileName(rec){
  const safeNo=String(rec?.record_no||'RECYCLE').replace(/[\\/:*?"<>|]/g,'_');
  return `創宇新機回收_正式切結書_${safeNo}.pdf`;
 }
-async function signedImageToDataUrl(url){
- if(!url)return '';
- const res=await fetch(url,{cache:'no-store',credentials:'omit'});
- if(!res.ok)throw new Error('PDF_SIGNATURE_FETCH_FAILED');
- const blob=await res.blob();
- return await new Promise((resolve,reject)=>{
-   const fr=new FileReader();
-   fr.onload=()=>resolve(String(fr.result||''));
-   fr.onerror=()=>reject(new Error('PDF_SIGNATURE_READ_FAILED'));
-   fr.readAsDataURL(blob);
- });
+
+const FORMAL_PDF_API_BASE=String(
+ document.querySelector('meta[name="formal-pdf-api-base"]')?.content||''
+).trim().replace(/\/+$/,'');
+
+function formalPdfApiUrl(recordId){
+ const id=String(recordId||'').trim();
+ if(!id)throw new Error('PDF_RECORD_ID_REQUIRED');
+ const path=`/api/recycle-records/${encodeURIComponent(id)}/formal-pdf`;
+ return FORMAL_PDF_API_BASE?`${FORMAL_PDF_API_BASE}${path}`:path;
 }
 
-function measureFormalPdfZoomCorrection(canvas){
-  if(!canvas?.width || !canvas?.height)return 1;
-  const ctx=canvas.getContext('2d',{willReadFrequently:true});
-  if(!ctx)return 1;
-
-  let imageData;
-  try{
-    imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
-  }catch(e){
-    safeProductionError('pdf_probe_measure',e,'PDF_PROBE_ERROR');
-    return 1;
-  }
-
-  const d=imageData.data,w=canvas.width,h=canvas.height;
-  let minX=w,maxX=-1;
-  const step=Math.max(1,Math.round(w/800));
-
-  for(let y=0;y<h;y+=step){
-    for(let x=0;x<w;x+=step){
-      const i=(y*w+x)*4;
-      if(d[i]<245 || d[i+1]<245 || d[i+2]<245){
-        if(x<minX)minX=x;
-        if(x>maxX)maxX=x;
-      }
-    }
-  }
-
-  if(maxX<minX)return 1;
-
-  const visibleFraction=(maxX-minX+1)/w;
-  const goldenFraction=1468/1588;
-  const factor=goldenFraction/visibleFraction;
-
-  // 正常輸出不介入；只修目前約 75% 的全域縮小。
-  if(!Number.isFinite(factor) || factor<1.08 || factor>1.45)return 1;
-  return factor;
+function formalPdfErrorHint(code){
+ const key=String(code||'').trim();
+ const hints={
+   PDF_RECORD_ID_REQUIRED:'系統缺少正式回收單識別碼，請由「回收紀錄」重新查詢後下載。',
+   PDF_API_UNAVAILABLE:'原生正式 PDF 服務目前無法連線，請確認網路後重新嘗試。',
+   PDF_API_TIMEOUT:'原生正式 PDF 產生逾時，請稍後重新嘗試。',
+   PDF_API_NOT_CONFIGURED:'原生正式 PDF API 尚未完成部署設定。',
+   PDF_INVALID_CONTENT:'PDF 服務回傳格式異常，系統已停止下載。',
+   AUTH_REQUIRED:'登入狀態已失效，請重新登入後再試。',
+   AUTH_INVALID:'登入狀態已失效，請重新登入後再試。',
+   STORE_SCOPE_DENIED:'目前帳號沒有此門市正式 PDF 的下載權限。',
+   RECORD_NOT_FOUND:'查無可下載的正式回收單，或此筆資料不在目前帳號授權範圍。',
+   SIGNATURE_NOT_COMPLETED:'此筆交易尚未完成電子簽署，暫時無法產生正式 PDF。',
+   SIGNATURE_ASSET_UNAVAILABLE:'電子簽名檔目前無法讀取，為避免產生不完整文件，系統已停止下載。',
+   PDF_CONTRACT_INVALID:'正式回收資料不完整，請通知管理人員確認。',
+   PDF_RENDER_FAILED:'原生正式 PDF 產生失敗，請稍後重新嘗試。',
+   PDF_INTERNAL_ERROR:'原生正式 PDF 服務暫時無法使用，請稍後重新嘗試。'
+ };
+ return hints[key]||'正式 PDF 暫時無法下載。正式回收資料不受影響，請稍後重新嘗試。';
 }
 
-
-function applyFormalPdfOpticalTextAlignment(root){
-  if(!root)return;
-
-  const cells=root.querySelectorAll('.legacy-master-table td, .legacy-master-table th');
-
-  cells.forEach(cell=>{
-    // Skip cells whose visual content is not ordinary text.
-    if(
-      cell.classList.contains('legacy-imei-cell') ||
-      cell.classList.contains('legacy-scan-cell') ||
-      cell.querySelector('svg,canvas,img,.legacy-imei-wrap')
-    ) return;
-
-    // Avoid wrapping twice.
-    if(cell.children.length===1 && cell.firstElementChild?.classList.contains('legacy-pdf-text')){
-      return;
-    }
-
-    const wrap=document.createElement('span');
-    wrap.className='legacy-pdf-text';
-
-    while(cell.firstChild){
-      wrap.appendChild(cell.firstChild);
-    }
-    cell.appendChild(wrap);
-  });
-}
-
-async function createFormalPdfFromRecord(rec,signatureUrl){
- if(!rec?.id||!rec?.record_no||!rec?.sign_session_id){
-   throw new Error('PDF_FINALIZED_RECORD_REQUIRED');
- }
- if(typeof window.html2canvas!=='function'||!window.jspdf?.jsPDF){
-   throw new Error('PDF_LIBRARY_NOT_READY');
- }
-
- // PDF 只使用 finalized recycle_records + completed sign_session 的電子簽名。
- // 證件正反面在此流程完全不請求、不產生 Signed URL，也不會寫入 PDF DOM。
- const signatureDataUrl=await signedImageToDataUrl(signatureUrl);
- fillPrintSheetFromRecord(rec,signatureDataUrl);
-
- const root=$('printSheet');
- const page=root?.querySelector('.legacy-print-page');
- const doc=page?.querySelector('.legacy-doc');
- if(!root||!page||!doc)throw new Error('PDF_TEMPLATE_NOT_READY');
- if(root.querySelector('.legacy-id-attachments')){
-   throw new Error('PDF_ID_ATTACHMENT_GUARD');
- }
-
- const previousStyle=root.getAttribute('style');
- const hadCaptureClass=page.classList.contains('pdf-capture');
+function pdfFileNameFromDisposition(disposition,fallbackName){
+ const cd=String(disposition||'');
+ const utf8=cd.match(/filename\*=UTF-8''([^;]+)/i);
+ const quoted=cd.match(/filename="([^"]+)"/i);
+ const plain=cd.match(/filename=([^;]+)/i);
  try{
-   root.style.display='block';
-   root.style.position='fixed';
-   root.style.left='-12000px';
-   root.style.top='0';
-   root.style.width='794px';
-   root.style.maxWidth='794px';
-   root.style.background='#fff';
-   root.style.zIndex='-9999';
-   root.style.pointerEvents='none';
+   if(utf8?.[1])return decodeURIComponent(utf8[1]);
+ }catch(e){}
+ return (quoted?.[1]||plain?.[1]||fallbackName||'創宇新機回收_正式切結書.pdf').trim();
+}
 
-   if(!hadCaptureClass)page.classList.add('pdf-capture');
+async function downloadNativeFormalPdf(recordId){
+ if(!await requireServerAuth())throw new Error('AUTH_REQUIRED');
 
-   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-   await waitForPrintAssets(7000);
-   if(document.fonts?.ready){
-     try{await document.fonts.ready}catch(e){}
-   }
-   syncLegacyMasterSplit(root);
+ const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+ const accessToken=sessionData?.session?.access_token||'';
+ if(sessionError||!accessToken)throw new Error('AUTH_REQUIRED');
 
-   // V4.3.22：只移動「文字本體」，不動 td/th、不改 row height。
-   applyFormalPdfOpticalTextAlignment(root);
+ // 空值代表同源部署；若 Beta API 分開部署，於 <meta name="formal-pdf-api-base"> 設 HTTPS Origin。
+ const url=formalPdfApiUrl(recordId);
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),45000);
 
-   await new Promise(resolve=>setTimeout(resolve,120));
-
-   // 先 Probe 目前整張文件的全域比例。
-   let zoomCorrection=1;
-   try{
-     const probe=await window.html2canvas(page,{
-       scale:1,
-       useCORS:true,
-       allowTaint:false,
-       backgroundColor:'#ffffff',
-       logging:false,
-       imageTimeout:7000,
-       windowWidth:794,
-       width:794,
-       height:1123,
-       scrollX:0,
-       scrollY:0
-     });
-     zoomCorrection=measureFormalPdfZoomCorrection(probe);
-   }catch(e){
-     safeProductionError('pdf_scale_probe',e,'PDF_PROBE_ERROR');
-     zoomCorrection=1;
-   }
-
-   const previousZoom=page.style.zoom;
-   const previousTextAdjust=page.style.webkitTextSizeAdjust;
-
-   if(zoomCorrection!==1){
-     // 重要：不用 transform。
-     // CSS zoom 會重新進行 layout / font metrics / line-height 計算，
-     // 避免 Safari + html2canvas 的中文字 transform glyph 失真。
-     page.style.zoom=String(zoomCorrection);
-     page.style.webkitTextSizeAdjust='100%';
-     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-     if(document.fonts?.ready){
-       try{await document.fonts.ready}catch(e){}
-     }
-   }
-
-   let canvas;
-   try{
-     canvas=await window.html2canvas(page,{
-       scale:3,
-       useCORS:true,
-       allowTaint:false,
-       backgroundColor:'#ffffff',
-       logging:false,
-       imageTimeout:7000,
-       windowWidth:794,
-       width:794,
-       height:1123,
-       scrollX:0,
-       scrollY:0
-     });
-   }finally{
-     page.style.zoom=previousZoom;
-     page.style.webkitTextSizeAdjust=previousTextAdjust;
-   }
-
-   if(!canvas?.width||!canvas?.height)throw new Error('PDF_RENDER_EMPTY');
-
-   const {jsPDF}=window.jspdf;
-   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-   const imgData=canvas.toDataURL('image/png');
-
-   pdf.setProperties({
-     title:`Formal Recycle Declaration ${rec.record_no}`,
-     subject:'Smart mobile formal recycle declaration - no ID images',
-     author:'Smart mobile',
-     creator:`Smart mobile Recycle System ${APP_VERSION}`,
-     keywords:`${rec.record_no}, recycle, formal-pdf, no-id`
+ let res;
+ try{
+   res=await fetch(url,{
+     method:'GET',
+     headers:{
+       'Authorization':`Bearer ${accessToken}`,
+       'Accept':'application/pdf'
+     },
+     cache:'no-store',
+     credentials:'omit',
+     signal:controller.signal
    });
-
-   // V4.3.1：capture 直接固定為 A4 比例，避免置中縮放後產生過多上下留白。
-   pdf.addImage(imgData,'PNG',0,0,210,297);
-   pdf.save(formalPdfFileName(rec));
-   return true;
+ }catch(e){
+   if(e?.name==='AbortError')throw new Error('PDF_API_TIMEOUT');
+   throw new Error('PDF_API_UNAVAILABLE');
  }finally{
-   if(!hadCaptureClass)page.classList.remove('pdf-capture');
-   if(previousStyle===null)root.removeAttribute('style');
-   else root.setAttribute('style',previousStyle);
+   clearTimeout(timer);
  }
+
+ if(!res.ok){
+   let code=`PDF_HTTP_${res.status}`;
+   try{
+     const body=await res.json();
+     code=String(body?.error?.code||code);
+   }catch(e){}
+   throw new Error(code);
+ }
+
+ const contentType=String(res.headers.get('content-type')||'').toLowerCase();
+ if(!contentType.includes('application/pdf')){
+   throw new Error('PDF_INVALID_CONTENT');
+ }
+
+ const blob=await res.blob();
+ if(!blob.size)throw new Error('PDF_INVALID_CONTENT');
+
+ const fallback=`創宇新機回收_正式切結書_${String(lastCreatedRecordNo||recordId).replace(/[\\/:*?"<>|]/g,'_')}.pdf`;
+ const fileName=pdfFileNameFromDisposition(
+   res.headers.get('content-disposition'),
+   fallback
+ );
+
+ const objectUrl=URL.createObjectURL(blob);
+ try{
+   const a=document.createElement('a');
+   a.href=objectUrl;
+   a.download=fileName;
+   a.rel='noopener';
+   document.body.appendChild(a);
+   a.click();
+   a.remove();
+ }finally{
+   setTimeout(()=>URL.revokeObjectURL(objectUrl),1500);
+ }
+ return true;
 }
 
 window.printRecordPdf=async id=>{
  if(!await requireServerAuth())return;
- const {data,error}=await sb.from('recycle_records').select('*').eq('id',id).single();
- if(error)return backendFailureModal('查詢失敗','records_query',error);
-
- // 正式 PDF 最小權限：只取得 completed 狀態與電子簽名，不取得證件路徑。
- const assets=await getRecordSignedAssets(data,{includeIds:false,ttl:300});
- if(assets.sessionStatus!=='completed'){
-   return modal('PDF 無法產生','<div class="notice warn">此筆交易尚未完成電子簽署，正式 PDF 不允許產生。</div>');
- }
- if(!assets.signatureUrl){
-   return modal('簽名尚未載入','<div class="notice warn">目前無法讀取此筆正式回收紀錄的電子簽名，為避免產生不完整文件，系統已停止 PDF 輸出。</div>');
- }
-
  try{
-   await createFormalPdfFromRecord(data,assets.signatureUrl);
+   await downloadNativeFormalPdf(id);
  }catch(e){
-   safeProductionError('formal_pdf',e,'PDF_ERROR');
-   const code=String(e?.message||'');
-   const hint=code==='PDF_LIBRARY_NOT_READY'
-     ? 'PDF 元件尚未完成載入，請確認網路連線後重新整理頁面。'
-     : 'PDF 產生失敗，系統沒有建立含證件的替代文件。請重新嘗試。';
-   return modal('PDF 產生失敗',`<div class="notice warn">${escHtml(hint)}</div>`);
+   safeProductionError('native_formal_pdf',e,'PDF_API_ERROR');
+   return modal(
+     '正式 PDF 下載失敗',
+     `<div class="notice warn">${escHtml(formalPdfErrorHint(String(e?.message||'')))}</div>
+      <div class="notice info" style="margin-top:10px">
+        系統已停止舊版截圖式 PDF 路徑，不會產生低品質替代文件。
+        正式回收紀錄與雲端完整客資均不受影響。
+      </div>`
+   );
  }
 }
 
@@ -7149,40 +7060,5 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
   }
 }
 </style>
-
-<style id="v4322-pdf-optical-text-only">
-/* =========================================================
-   Web V4.3.22｜V4.3.14 基準・288PPI 高解析光學置中
-   這個 patch 刻意「不設定」：
-   - font-size
-   - font-weight
-   - line-height
-   - td/th padding
-   - row height
-   - col width
-   - table layout
-
-   只把 master table 裡的「文字本體」往上 1px。
-   cell / border / background 完全不移動。
-   ========================================================= */
-
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-pdf-text{
-  display:inline-block!important;
-  position:relative!important;
-  top:-1px!important;
-  max-width:100%!important;
-}
-
-/* 多行商品名稱仍可正常填滿欄寬及換行 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit > .legacy-pdf-text,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit > .legacy-pdf-text,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell > .legacy-pdf-text{
-  display:block!important;
-  width:100%!important;
-}
-
-/* 藍底 seller bar 原本已有 span flex 規則，不額外更動字型。 */
-</style>
-
 </body>
 </html>
