@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.13</title>
+<title>創宇新機回收管理系統｜Web V4.3.14</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2611,7 +2611,7 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.13｜商品名稱可讀性＋檢測選項正式文件化
+   Web V4.3.14｜商品名稱智能換行修正版
    僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.13';
+const APP_VERSION='Web V4.3.14';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4100,7 +4100,27 @@ function legacyProductFitClass(text=''){
  return '';
 }
 
+
+function legacyProductNameHtml(text=''){
+  // 僅加入「零寬換行點」，不改實際商品名稱內容。
+  // 先在原始純文字中加入 U+200B，再經 escHtml，避免任何 HTML injection。
+  let raw=String(text??'').replace(/\s+/g,' ').trim();
+
+  // 常見規格分隔符號後允許換行：_ / +
+  raw=raw.replace(/([_\/+])/g,'$1\u200B');
+
+  // 英數 ↔ 中文交界允許換行，例如 Ultra鍵盤、12GB版本。
+  raw=raw.replace(/([A-Za-z0-9])(?=[\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1\u200B');
+  raw=raw.replace(/([\u3400-\u4DBF\u4E00-\u9FFF])(?=[A-Za-z0-9])/g,'$1\u200B');
+
+  // 常見容量/連線規格後再提供柔性換行點。
+  raw=raw.replace(/\b(GB|TB|WIFI|WiFi|5G)(?=[A-Za-z0-9_\-\/+\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1\u200B');
+
+  return escHtml(raw);
+}
+
 function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',printMode=false){
+ const rawProduct=String(d?.product||'');
  d=sanitizeDirectStrings(d);
  const logo=PDF_FORM_LOGO || document.querySelector('.brand img')?.src||'';
  const today=legacyZhDate();
@@ -4108,8 +4128,9 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
  const amountText=money(Number(d.amount||0));
  const imei=d.imei||'';
  const product=d.product||'';
+ const productHtml=legacyProductNameHtml(rawProduct);
  const inspectRows=legacyInspectionRows(d.inspection||{},d.condition||'');
- const productFit=legacyProductFitClass(product);
+ const productFit=legacyProductFitClass(rawProduct);
  const signature=signatureUrl
    ? `<img class="legacy-sign-img" src="${signatureUrl}" alt="電子簽名">`
    : `<div class="legacy-sign-space"></div>`;
@@ -4139,7 +4160,7 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        <td class="legacy-center">25166891</td><td></td><td class="legacy-center" colspan="2">71營利所得</td><td></td><td></td>
      </tr>
      <tr class="legacy-master-r3">
-       <td class="lab">商品名稱</td><td class="legacy-product-fit ${productFit}">${product}</td>
+       <td class="lab">商品名稱</td><td class="legacy-product-fit ${productFit}">${productHtml}</td>
        <td class="lab">所得人姓名</td><td colspan="3">${d.customer||''}</td><td class="lab">所得人統編</td><td class="legacy-id-cell">${d.customerId||''}</td>
      </tr>
      <tr class="legacy-master-r4">
@@ -4157,7 +4178,7 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
      </tr>
      <tr class="legacy-master-r7">
        <th class="bar legacy-seller-bar" colspan="2"><span>◆ 賣方立書人資料 ◇</span></th>
-       <td class="legacy-product-fit legacy-goods-fit ${productFit}" colspan="2">${product}</td><td class="legacy-center">${amountText}</td><td class="legacy-center">1</td><td class="legacy-center">${amountText}</td><td class="legacy-center">${amountText}</td>
+       <td class="legacy-product-fit legacy-goods-fit ${productFit}" colspan="2">${productHtml}</td><td class="legacy-center">${amountText}</td><td class="legacy-center">1</td><td class="legacy-center">${amountText}</td><td class="legacy-center">${amountText}</td>
      </tr>
      <tr class="legacy-master-r8">
        <td class="lab">姓名</td><td>${d.customer||''}</td>
@@ -6984,25 +7005,41 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 </script>
 
 
-<style id="v4313-pdf-product-grade-polish">
-/* V4.3.13｜商品名稱可讀性＋檢測選項正式文件化 */
+<style id="v4314-pdf-product-smart-wrap">
+/* V4.3.14｜商品名稱智能換行修正版
+   保留 V4.3.13 檢測選項正式文件化樣式；
+   商品名稱只做可讀性與柔性換行優化。 */
+
+/* 商品名稱：取消負字距，降低擠字機率；長品名改靠柔性換行解決 */
 .legacy-master-table .legacy-master-r3 .legacy-product-fit{
-  font-size:9.8px!important;
-  line-height:1.18!important;
-  font-weight:600!important;
+  font-size:9.45px!important;
+  line-height:1.27!important;
+  font-weight:500!important;
+  letter-spacing:0!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
 }
 .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
-  font-size:9.35px!important;
-  line-height:1.18!important;
+  font-size:9.15px!important;
+  line-height:1.25!important;
   font-weight:500!important;
+  letter-spacing:0!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
 }
-.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:9.5px!important}
-.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:9.1px!important}
-.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:8.7px!important;letter-spacing:-.1px}
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:9.1px!important}
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:8.7px!important}
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:8.35px!important;letter-spacing:-.08px}
 
+/* 長品名仍保留智慧縮放，但不再使用負字距 */
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:9.25px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:8.95px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:8.55px!important;letter-spacing:0!important}
+
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:8.95px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:8.65px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:8.30px!important;letter-spacing:0!important}
+
+/* V4.3.13 檢測選項正式文件化樣式保留 */
 .legacy-grade-choice{
   border:1px solid #a9b8c8!important;
   border-radius:3px!important;
@@ -7029,21 +7066,31 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 
 @media print{
   .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit{
-    font-size:7.15pt!important;
-    line-height:1.18!important;
-    font-weight:600!important;
+    font-size:6.90pt!important;
+    line-height:1.27!important;
+    font-weight:500!important;
+    letter-spacing:0!important;
+    white-space:normal!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
   }
   .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
-    font-size:6.85pt!important;
-    line-height:1.18!important;
+    font-size:6.65pt!important;
+    line-height:1.25!important;
     font-weight:500!important;
+    letter-spacing:0!important;
+    white-space:normal!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
   }
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:6.9pt!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:6.55pt!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:6.2pt!important;letter-spacing:-.08pt}
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:6.65pt!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:6.35pt!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:6.05pt!important;letter-spacing:-.06pt}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:6.70pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:6.45pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:6.15pt!important;letter-spacing:0!important}
+
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:6.50pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:6.25pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:6.00pt!important;letter-spacing:0!important}
+
   .legacy-print-page .legacy-grade-choices{gap:1.1mm!important}
   .legacy-print-page .legacy-grade-choice{
     border:.42pt solid #9fb2c6!important;
