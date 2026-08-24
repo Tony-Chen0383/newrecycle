@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.1</title>
+<title>創宇新機回收管理系統｜Web V4.3.2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -819,10 +819,17 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 .legacy-print-page .legacy-sign-space{height:19mm}
 .legacy-print-page .legacy-footer{margin-top:3.2mm;font-size:6.2pt}
 
-/* Web V4.3.1｜正式 PDF 留白優化：capture 時強制 A4 比例，減少上下空白 */
+/* Web V4.3.2｜正式 PDF 版面精修
+   - 維持 A4 固定比例
+   - 上下留白再收斂
+   - 左右保留列印安全邊界
+   - 頁尾固定沉底，避免內容視覺漂浮
+*/
 .legacy-print-page.pdf-capture{
   width:794px;
+  height:1123px;
   min-height:1123px;
+  overflow:hidden;
   display:flex;
   flex-direction:column;
   background:#fff;
@@ -830,19 +837,33 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 .legacy-print-page.pdf-capture .legacy-doc{
   width:794px;
   max-width:none;
+  height:1123px;
   min-height:1123px;
-  padding:10mm 8mm 5mm;
+  padding:5.5mm 6mm 3.5mm;
   border:0;
   box-shadow:none;
   display:flex;
   flex-direction:column;
 }
 .legacy-print-page.pdf-capture .legacy-head{
-  margin-bottom:1.6mm;
+  margin-top:0;
+  margin-bottom:1mm;
+}
+.legacy-print-page.pdf-capture .legacy-head img{
+  max-height:13mm;
+}
+.legacy-print-page.pdf-capture .legacy-head h2{
+  margin-top:0;
+  line-height:1.12;
+}
+.legacy-print-page.pdf-capture .legacy-head-date{
+  padding-top:0;
 }
 .legacy-print-page.pdf-capture .legacy-footer{
   margin-top:auto;
-  padding-top:2mm;
+  padding-top:1.2mm;
+  padding-bottom:0;
+  line-height:1.25;
 }
 
 
@@ -3059,7 +3080,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.1';
+const APP_VERSION='Web V4.3.2';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4793,7 +4814,7 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    await waitForPrintAssets(7000);
    syncLegacyMasterSplit(root);
-   await new Promise(resolve=>setTimeout(resolve,120));
+   await new Promise(resolve=>setTimeout(resolve,80));
 
    const canvas=await window.html2canvas(page,{
      scale:2,
