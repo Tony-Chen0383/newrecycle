@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.21</title>
+<title>創宇新機回收管理系統｜Web V4.3.22</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2611,7 +2611,7 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.21｜PDF 字體裁切與擁擠分區修正版
+   Web V4.3.22｜V4.3.14基準・288PPI高解析光學置中版
    僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.21';
+const APP_VERSION='Web V4.3.22';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4102,17 +4102,21 @@ function legacyProductFitClass(text=''){
 
 
 function legacyProductNameHtml(text=''){
-  // V4.3.18：商品名稱只增加安全 <wbr> 柔性換行點，
-  // 不插入可見空白、不改資料庫原始文字。
-  const WBR_MARK='\uE000';
+  // 僅加入「零寬換行點」，不改實際商品名稱內容。
+  // 先在原始純文字中加入 U+200B，再經 escHtml，避免任何 HTML injection。
   let raw=String(text??'').replace(/\s+/g,' ').trim();
 
-  raw=raw.replace(/([_\/+])/g,'$1'+WBR_MARK);
-  raw=raw.replace(/([A-Za-z0-9])(?=[\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1'+WBR_MARK);
-  raw=raw.replace(/([\u3400-\u4DBF\u4E00-\u9FFF])(?=[A-Za-z0-9])/g,'$1'+WBR_MARK);
-  raw=raw.replace(/\b(GB|TB|WIFI|WiFi|5G)(?=[A-Za-z0-9_\-\/+\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1'+WBR_MARK);
+  // 常見規格分隔符號後允許換行：_ / +
+  raw=raw.replace(/([_\/+])/g,'$1\u200B');
 
-  return escHtml(raw).replaceAll(WBR_MARK,'<wbr>');
+  // 英數 ↔ 中文交界允許換行，例如 Ultra鍵盤、12GB版本。
+  raw=raw.replace(/([A-Za-z0-9])(?=[\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1\u200B');
+  raw=raw.replace(/([\u3400-\u4DBF\u4E00-\u9FFF])(?=[A-Za-z0-9])/g,'$1\u200B');
+
+  // 常見容量/連線規格後再提供柔性換行點。
+  raw=raw.replace(/\b(GB|TB|WIFI|WiFi|5G)(?=[A-Za-z0-9_\-\/+\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1\u200B');
+
+  return escHtml(raw);
 }
 
 function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',printMode=false){
@@ -4148,25 +4152,25 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        <th class="bar legacy-master-right-title" colspan="6">◇ 個人一時貿易申報表 ◆</th>
      </tr>
      <tr class="legacy-master-r1">
-       <td class="lab">分店名稱</td><td class="legacy-data-single">${d.store||''}</td>
+       <td class="lab">分店名稱</td><td>${d.store||''}</td>
        <td class="lab legacy-mini-head">申報單位統編</td><td class="lab legacy-mini-head">所得給付年度</td><td class="lab legacy-mini-head" colspan="2">格式代號及所得類別</td><td class="lab legacy-mini-head">製單編號</td><td class="lab legacy-mini-head">稽核機關</td>
      </tr>
      <tr class="legacy-master-r2">
-       <td class="lab">承辦人員</td><td class="legacy-data-single">${d.clerk||''}</td>
-       <td class="legacy-center legacy-data-single">25166891</td><td></td><td class="legacy-center legacy-data-single" colspan="2">71營利所得</td><td></td><td></td>
+       <td class="lab">承辦人員</td><td>${d.clerk||''}</td>
+       <td class="legacy-center">25166891</td><td></td><td class="legacy-center" colspan="2">71營利所得</td><td></td><td></td>
      </tr>
      <tr class="legacy-master-r3">
        <td class="lab">商品名稱</td><td class="legacy-product-fit ${productFit}">${productHtml}</td>
-       <td class="lab">所得人姓名</td><td class="legacy-data-single" colspan="3">${d.customer||''}</td><td class="lab">所得人統編</td><td class="legacy-id-cell legacy-data-single">${d.customerId||''}</td>
+       <td class="lab">所得人姓名</td><td colspan="3">${d.customer||''}</td><td class="lab">所得人統編</td><td class="legacy-id-cell">${d.customerId||''}</td>
      </tr>
      <tr class="legacy-master-r4">
        <td class="lab" rowspan="2">IMEI</td>
        <td class="legacy-imei-cell" rowspan="2"><div class="legacy-imei-wrap">${barcodeSvg(imei)}<div class="legacy-imei-num">${imei}</div></div></td>
        <td class="lab" rowspan="2">所得人地址</td><td class="legacy-address-cell" colspan="3" rowspan="2">${d.address||''}</td>
-       <td class="lab">買受日期</td><td class="legacy-data-single">${d.buyDate||''}</td>
+       <td class="lab">買受日期</td><td>${d.buyDate||''}</td>
      </tr>
      <tr class="legacy-master-r5">
-       <td class="lab">買受原因</td><td class="legacy-data-single">${d.buyReason||'進貨'}</td>
+       <td class="lab">買受原因</td><td>${d.buyReason||'進貨'}</td>
      </tr>
      <tr class="legacy-master-r6">
        <td class="amount-lab">回收金額</td><td class="amount-val">${amountText}</td>
@@ -4177,20 +4181,20 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
        <td class="legacy-product-fit legacy-goods-fit ${productFit}" colspan="2">${productHtml}</td><td class="legacy-center">${amountText}</td><td class="legacy-center">1</td><td class="legacy-center">${amountText}</td><td class="legacy-center">${amountText}</td>
      </tr>
      <tr class="legacy-master-r8">
-       <td class="lab">姓名</td><td class="legacy-data-single">${d.customer||''}</td>
+       <td class="lab">姓名</td><td>${d.customer||''}</td>
        <td class="lab" colspan="4">申報單位</td><td class="lab" colspan="2">掃描編號</td>
      </tr>
      <tr class="legacy-master-r9">
-       <td class="lab">身分證字號</td><td class="legacy-data-single">${d.customerId||''}</td>
-       <td class="lab">名稱</td><td class="legacy-data-single" colspan="3">創宇數位科技有限公司</td><td class="legacy-scan-cell" colspan="2" rowspan="3"></td>
+       <td class="lab">身分證字號</td><td>${d.customerId||''}</td>
+       <td class="lab">名稱</td><td colspan="3">創宇數位科技有限公司</td><td class="legacy-scan-cell" colspan="2" rowspan="3"></td>
      </tr>
      <tr class="legacy-master-r10">
-       <td class="lab">聯絡電話</td><td class="legacy-data-single">${d.phone||''}</td>
+       <td class="lab">聯絡電話</td><td>${d.phone||''}</td>
        <td class="lab">地址</td><td colspan="3">桃園市中壢區中山東路一段336-2號2樓</td>
      </tr>
      <tr class="legacy-master-r11">
        <td class="lab" rowspan="2">地址</td><td rowspan="2">${d.address||''}</td>
-       <td class="lab">負責人</td><td class="legacy-data-single" colspan="3">莊涵凱</td>
+       <td class="lab">負責人</td><td colspan="3">莊涵凱</td>
      </tr>
      <tr class="legacy-master-r12">
        <td class="legacy-unit-note" colspan="6">※本表僅限於營利事業向依法免辦營業登記，且非經買賣商品個人購買商品者使用。<br>第1聯：報核（存根）聯　　申報單位存查</td>
@@ -4851,6 +4855,35 @@ function measureFormalPdfZoomCorrection(canvas){
   return factor;
 }
 
+
+function applyFormalPdfOpticalTextAlignment(root){
+  if(!root)return;
+
+  const cells=root.querySelectorAll('.legacy-master-table td, .legacy-master-table th');
+
+  cells.forEach(cell=>{
+    // Skip cells whose visual content is not ordinary text.
+    if(
+      cell.classList.contains('legacy-imei-cell') ||
+      cell.classList.contains('legacy-scan-cell') ||
+      cell.querySelector('svg,canvas,img,.legacy-imei-wrap')
+    ) return;
+
+    // Avoid wrapping twice.
+    if(cell.children.length===1 && cell.firstElementChild?.classList.contains('legacy-pdf-text')){
+      return;
+    }
+
+    const wrap=document.createElement('span');
+    wrap.className='legacy-pdf-text';
+
+    while(cell.firstChild){
+      wrap.appendChild(cell.firstChild);
+    }
+    cell.appendChild(wrap);
+  });
+}
+
 async function createFormalPdfFromRecord(rec,signatureUrl){
  if(!rec?.id||!rec?.record_no||!rec?.sign_session_id){
    throw new Error('PDF_FINALIZED_RECORD_REQUIRED');
@@ -4893,6 +4926,10 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      try{await document.fonts.ready}catch(e){}
    }
    syncLegacyMasterSplit(root);
+
+   // V4.3.22：只移動「文字本體」，不動 td/th、不改 row height。
+   applyFormalPdfOpticalTextAlignment(root);
+
    await new Promise(resolve=>setTimeout(resolve,120));
 
    // 先 Probe 目前整張文件的全域比例。
@@ -4935,7 +4972,7 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
    let canvas;
    try{
      canvas=await window.html2canvas(page,{
-       scale:2,
+       scale:3,
        useCORS:true,
        allowTaint:false,
        backgroundColor:'#ffffff',
@@ -7001,230 +7038,151 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 </script>
 
 
-<style id="v4321-pdf-zoned-text-fix">
-/* =========================================================
-   Web V4.3.21｜PDF 字體裁切與擁擠分區修正
-   重點：
-   - 不再對所有 cell 套「上3 / 下5」的全域光學位移。
-   - 標題格、單行資料、多行資料、商品名稱，各自使用自己的安全 line box。
-   - 不改欄寬、列高、Zoom、Capture、A4。
-   ========================================================= */
+<style id="v4314-pdf-product-smart-wrap">
+/* V4.3.14｜商品名稱智能換行修正版
+   保留 V4.3.13 檢測選項正式文件化樣式；
+   商品名稱只做可讀性與柔性換行優化。 */
 
-.legacy-print-page.pdf-capture .legacy-doc{
-  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-synthesis:none!important;
-  font-kerning:normal!important;
-  text-rendering:geometricPrecision!important;
-}
-
-.legacy-print-page.pdf-capture .legacy-master-table{
-  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:14px!important;
-  letter-spacing:0!important;
-}
-
-.legacy-print-page.pdf-capture .legacy-master-table td,
-.legacy-print-page.pdf-capture .legacy-master-table th{
-  font-family:inherit!important;
-  vertical-align:middle!important;
-  font-synthesis:none!important;
-}
-
-/* =========================================================
-   A. 標題格
-   - 對稱 padding
-   - 14px line box 給中文字完整上下空間
-   - 不再用 optical shift
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-master-table .lab{
-  font-size:10px!important;
-  font-weight:600!important;
-  line-height:14px!important;
-  letter-spacing:0!important;
-  text-align:center!important;
-  vertical-align:middle!important;
-  padding-top:4px!important;
-  padding-bottom:4px!important;
-  padding-left:5px!important;
-  padding-right:5px!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-}
-
-/* 窄格 mini 標題單獨處理，不跟一般 label 共用高度感 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-mini-head{
-  font-size:8px!important;
-  font-weight:600!important;
-  line-height:11px!important;
-  letter-spacing:0!important;
-  text-align:center!important;
-  vertical-align:middle!important;
-  padding-top:4px!important;
-  padding-bottom:4px!important;
-  padding-left:2px!important;
-  padding-right:2px!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-}
-
-/* =========================================================
-   B. 短單行資料
-   例如：中壢站、S123456789、日期、電話、姓名
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-data-single{
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:14px!important;
-  letter-spacing:.12px!important;
-  vertical-align:middle!important;
-  padding-top:4px!important;
-  padding-bottom:4px!important;
-  padding-left:6px!important;
-  padding-right:6px!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-  font-variant-numeric:tabular-nums!important;
-}
-
-/* ID / 統編不再另外縮字，避免同一列尺寸跳動 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-id-cell{
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:14px!important;
-  letter-spacing:.14px!important;
-}
-
-/* 原本 legacy-center 內的金額/數字仍維持中間對齊 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-center{
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:14px!important;
-  vertical-align:middle!important;
-  letter-spacing:.08px!important;
-}
-
-/* =========================================================
-   C. 多行資料
-   地址不能套 nowrap，也不做額外位移
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell{
-  font-size:10px!important;
-  font-weight:400!important;
-  line-height:14px!important;
-  letter-spacing:0!important;
-  vertical-align:middle!important;
-  padding-top:4px!important;
-  padding-bottom:4px!important;
-}
-
-/* =========================================================
-   D. 商品名稱
-   固定 9px，保留 <wbr>；給 12px line box，避免中文字上/下緣裁切
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-md,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-sm,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-xs,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-md,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-sm,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-xs{
-  font-size:9px!important;
-  font-weight:400!important;
-  line-height:12px!important;
+/* 商品名稱：取消負字距，降低擠字機率；長品名改靠柔性換行解決 */
+.legacy-master-table .legacy-master-r3 .legacy-product-fit{
+  font-size:9.45px!important;
+  line-height:1.27!important;
+  font-weight:500!important;
   letter-spacing:0!important;
   white-space:normal!important;
   overflow-wrap:normal!important;
   word-break:normal!important;
-  vertical-align:middle!important;
-  padding-top:3px!important;
-  padding-bottom:3px!important;
+}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit{
+  font-size:9.15px!important;
+  line-height:1.25!important;
+  font-weight:500!important;
+  letter-spacing:0!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
 }
 
-/* =========================================================
-   E. 藍底主標題
-   不再做上下不對稱 padding
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-left-title,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-right-title,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-seller-bar{
-  font-size:10px!important;
-  font-weight:700!important;
-  line-height:14px!important;
-  letter-spacing:0!important;
-  vertical-align:middle!important;
-  padding-top:3px!important;
-  padding-bottom:3px!important;
-}
+/* 長品名仍保留智慧縮放，但不再使用負字距 */
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:9.25px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:8.95px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:8.55px!important;letter-spacing:0!important}
 
-/* =========================================================
-   F. 金額 / IMEI / 備註
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
-  font-size:10px!important;
-  font-weight:700!important;
-  line-height:14px!important;
-  vertical-align:middle!important;
-}
-.legacy-print-page.pdf-capture .legacy-master-table .amount-val{
-  font-size:12px!important;
-  font-weight:700!important;
-  line-height:16px!important;
-  letter-spacing:0!important;
-  vertical-align:middle!important;
-}
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-imei-num{
-  font-size:8px!important;
-  font-weight:400!important;
-  line-height:10px!important;
-  letter-spacing:.08px!important;
-  margin-top:-1px!important;
-}
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-unit-note{
-  font-size:8px!important;
-  font-weight:400!important;
-  line-height:11px!important;
-  letter-spacing:0!important;
-  padding-top:4px!important;
-  padding-bottom:4px!important;
-}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:8.95px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:8.65px!important;letter-spacing:0!important}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:8.30px!important;letter-spacing:0!important}
 
-/* =========================================================
-   G. A～E 檢測格
-   使用對稱 padding，不再做視覺上移
-   ========================================================= */
-.legacy-print-page.pdf-capture .legacy-grade-choices{
-  gap:1.1mm!important;
-}
-.legacy-print-page.pdf-capture .legacy-grade-choice{
-  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-size:9px!important;
-  font-weight:400!important;
-  line-height:12px!important;
-  letter-spacing:0!important;
+/* V4.3.13 檢測選項正式文件化樣式保留 */
+.legacy-grade-choice{
   border:1px solid #a9b8c8!important;
   border-radius:3px!important;
   padding:4px 3px!important;
   background:#fff!important;
   color:#2b3847!important;
+  font-weight:600!important;
   box-shadow:none!important;
-  font-synthesis:none!important;
+  line-height:1.24!important;
 }
-.legacy-print-page.pdf-capture .legacy-grade-choice.active{
+.legacy-grade-choice.active{
   background:#f2f7fc!important;
   border-color:#4b84ba!important;
   color:#124f8d!important;
-  font-weight:600!important;
+  font-weight:700!important;
+  box-shadow:none!important;
 }
-.legacy-print-page.pdf-capture .legacy-grade-choice .box{
-  font-weight:600!important;
+.legacy-grade-choice .box{
+  display:inline-block!important;
+  min-width:1.05em!important;
   margin-right:2px!important;
+  font-weight:700!important;
 }
 
-/* 下方切結書正文沿用既有穩定設定，不加入這次分區規則。 */
+@media print{
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit{
+    font-size:6.90pt!important;
+    line-height:1.27!important;
+    font-weight:500!important;
+    letter-spacing:0!important;
+    white-space:normal!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
+    font-size:6.65pt!important;
+    line-height:1.25!important;
+    font-weight:500!important;
+    letter-spacing:0!important;
+    white-space:normal!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:6.70pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:6.45pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:6.15pt!important;letter-spacing:0!important}
+
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:6.50pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:6.25pt!important;letter-spacing:0!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:6.00pt!important;letter-spacing:0!important}
+
+  .legacy-print-page .legacy-grade-choices{gap:1.1mm!important}
+  .legacy-print-page .legacy-grade-choice{
+    border:.42pt solid #9fb2c6!important;
+    border-radius:1.1mm!important;
+    padding:1.2mm .75mm!important;
+    background:#fff!important;
+    color:#263748!important;
+    font-size:6.45pt!important;
+    font-weight:600!important;
+    line-height:1.2!important;
+    box-shadow:none!important;
+  }
+  .legacy-print-page .legacy-grade-choice.active{
+    background:#f1f6fb!important;
+    border-color:#4b84ba!important;
+    color:#124f8d!important;
+    font-weight:700!important;
+  }
+  .legacy-print-page .legacy-grade-choice .box{
+    min-width:1em!important;
+    margin-right:.45mm!important;
+    font-weight:700!important;
+  }
+}
 </style>
+
+<style id="v4322-pdf-optical-text-only">
+/* =========================================================
+   Web V4.3.22｜V4.3.14 基準・288PPI 高解析光學置中
+   這個 patch 刻意「不設定」：
+   - font-size
+   - font-weight
+   - line-height
+   - td/th padding
+   - row height
+   - col width
+   - table layout
+
+   只把 master table 裡的「文字本體」往上 1px。
+   cell / border / background 完全不移動。
+   ========================================================= */
+
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-pdf-text{
+  display:inline-block!important;
+  position:relative!important;
+  top:-1px!important;
+  max-width:100%!important;
+}
+
+/* 多行商品名稱仍可正常填滿欄寬及換行 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit > .legacy-pdf-text,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit > .legacy-pdf-text,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell > .legacy-pdf-text{
+  display:block!important;
+  width:100%!important;
+}
+
+/* 藍底 seller bar 原本已有 span flex 規則，不額外更動字型。 */
+</style>
+
 </body>
 </html>
