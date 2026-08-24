@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.11</title>
+<title>創宇新機回收管理系統｜Web V4.3.12</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2609,29 +2609,43 @@ body.qr-transaction-locked #qrSignSection{
 </style>
 
 
-<style id="v4311-pdf-local-font-patch">
+<style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.11｜PDF 局部字級精修
-   只作用於正式 PDF Capture。
+   Web V4.3.12｜正式文件字體層級優化
+   僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
 
-/* 左側「請詳閱下述內容…」整列 */
+/* ① 一般欄位標籤：字級不動，只把黑度從偏重改成正式文件層級 */
+.legacy-print-page.pdf-capture .legacy-master-table .lab{
+  font-weight:600!important;
+}
+
+/* 黃底回收金額標籤仍保留重點，不納入一般 lab 降重 */
+.legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
+  font-weight:900!important;
+}
+
+/* ② 藍底說明列：縮一點、降一級字重，避免整排白字黏成一塊 */
 .legacy-print-page.pdf-capture .legacy-declare-top-left{
-  font-size:8.25px!important;
-  line-height:1.22!important;
+  font-size:7.9px!important;
+  font-weight:800!important;
+  line-height:1.20!important;
 }
-
-/* 「請詳閱下述內容」前綴 */
 .legacy-print-page.pdf-capture .legacy-declare-top-left .read{
-  font-size:8.25px!important;
-  line-height:1.22!important;
+  font-size:7.9px!important;
+  font-weight:800!important;
+  line-height:1.20!important;
+}
+.legacy-print-page.pdf-capture .legacy-declare-top-right{
+  font-size:8.2px!important;
+  font-weight:800!important;
+  line-height:1.20!important;
 }
 
-/* 右側「立書人親簽」 */
-.legacy-print-page.pdf-capture .legacy-declare-top-right{
-  font-size:8.45px!important;
-  line-height:1.22!important;
+/* ③ 切結書正文：不縮字，只稍微放鬆行距，提高 A4 閱讀性 */
+.legacy-print-page.pdf-capture .legacy-declare-body{
+  line-height:1.26!important;
 }
 </style>
 
@@ -3086,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.11';
+const APP_VERSION='Web V4.3.12';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
