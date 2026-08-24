@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.17</title>
+<title>創宇新機回收管理系統｜Web V4.3.18</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2611,7 +2611,7 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.17｜標籤光學置中＋中英字距修正版
+   Web V4.3.18｜PDF字體規格統一版
    僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.17';
+const APP_VERSION='Web V4.3.18';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4102,27 +4102,17 @@ function legacyProductFitClass(text=''){
 
 
 function legacyProductNameHtml(text=''){
-  // V4.3.17：
-  // 1. 保留安全 <wbr> 柔性換行。
-  // 2. 英數 ↔ 中文交界加入極小 thin-space，避免 Safari/html2canvas glyph 黏字。
-  //    只影響視覺排版，不改資料庫中的原始商品名稱。
+  // V4.3.18：商品名稱只增加安全 <wbr> 柔性換行點，
+  // 不插入可見空白、不改資料庫原始文字。
   const WBR_MARK='\uE000';
-  const GAP_MARK='\uE001';
   let raw=String(text??'').replace(/\s+/g,' ').trim();
 
-  // 常見規格分隔符號後允許換行：_ / +
   raw=raw.replace(/([_\/+])/g,'$1'+WBR_MARK);
-
-  // 英數 ↔ 中文：加入極小視覺間距 + 柔性換行點。
-  raw=raw.replace(/([A-Za-z0-9])(?=[\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1'+GAP_MARK+WBR_MARK);
-  raw=raw.replace(/([\u3400-\u4DBF\u4E00-\u9FFF])(?=[A-Za-z0-9])/g,'$1'+GAP_MARK+WBR_MARK);
-
-  // 常見容量／連線規格後提供柔性換行點。
+  raw=raw.replace(/([A-Za-z0-9])(?=[\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1'+WBR_MARK);
+  raw=raw.replace(/([\u3400-\u4DBF\u4E00-\u9FFF])(?=[A-Za-z0-9])/g,'$1'+WBR_MARK);
   raw=raw.replace(/\b(GB|TB|WIFI|WiFi|5G)(?=[A-Za-z0-9_\-\/+\u3400-\u4DBF\u4E00-\u9FFF])/g,'$1'+WBR_MARK);
 
-  return escHtml(raw)
-    .replaceAll(GAP_MARK,'&#8201;')
-    .replaceAll(WBR_MARK,'<wbr>');
+  return escHtml(raw).replaceAll(WBR_MARK,'<wbr>');
 }
 
 function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',printMode=false){
@@ -4188,7 +4178,7 @@ function legacyDeclarationTemplate(d,signatureUrl='',idFrontUrl='',idBackUrl='',
      </tr>
      <tr class="legacy-master-r8">
        <td class="lab">姓名</td><td>${d.customer||''}</td>
-       <td class="lab legacy-section-head" colspan="4">申報單位</td><td class="lab legacy-section-head" colspan="2">掃描編號</td>
+       <td class="lab" colspan="4">申報單位</td><td class="lab" colspan="2">掃描編號</td>
      </tr>
      <tr class="legacy-master-r9">
        <td class="lab">身分證字號</td><td>${d.customerId||''}</td>
@@ -7011,246 +7001,167 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 </script>
 
 
-<style id="v4314-pdf-product-smart-wrap">
-/* V4.3.14｜商品名稱智能換行修正版
-   保留 V4.3.13 檢測選項正式文件化樣式；
-   商品名稱只做可讀性與柔性換行優化。 */
-
-/* 商品名稱：取消負字距，降低擠字機率；長品名改靠柔性換行解決 */
-.legacy-master-table .legacy-master-r3 .legacy-product-fit{
-  font-size:9.45px!important;
-  line-height:1.27!important;
-  font-weight:500!important;
-  letter-spacing:0!important;
-  white-space:normal!important;
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-}
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit{
-  font-size:9.15px!important;
-  line-height:1.25!important;
-  font-weight:500!important;
-  letter-spacing:0!important;
-  white-space:normal!important;
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-}
-
-/* 長品名仍保留智慧縮放，但不再使用負字距 */
-.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:9.25px!important;letter-spacing:0!important}
-.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:8.95px!important;letter-spacing:0!important}
-.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:8.55px!important;letter-spacing:0!important}
-
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:8.95px!important;letter-spacing:0!important}
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:8.65px!important;letter-spacing:0!important}
-.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:8.30px!important;letter-spacing:0!important}
-
-/* V4.3.13 檢測選項正式文件化樣式保留 */
-.legacy-grade-choice{
-  border:1px solid #a9b8c8!important;
-  border-radius:3px!important;
-  padding:4px 3px!important;
-  background:#fff!important;
-  color:#2b3847!important;
-  font-weight:600!important;
-  box-shadow:none!important;
-  line-height:1.24!important;
-}
-.legacy-grade-choice.active{
-  background:#f2f7fc!important;
-  border-color:#4b84ba!important;
-  color:#124f8d!important;
-  font-weight:700!important;
-  box-shadow:none!important;
-}
-.legacy-grade-choice .box{
-  display:inline-block!important;
-  min-width:1.05em!important;
-  margin-right:2px!important;
-  font-weight:700!important;
-}
-
-@media print{
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit{
-    font-size:6.90pt!important;
-    line-height:1.27!important;
-    font-weight:500!important;
-    letter-spacing:0!important;
-    white-space:normal!important;
-    overflow-wrap:normal!important;
-    word-break:normal!important;
-  }
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
-    font-size:6.65pt!important;
-    line-height:1.25!important;
-    font-weight:500!important;
-    letter-spacing:0!important;
-    white-space:normal!important;
-    overflow-wrap:normal!important;
-    word-break:normal!important;
-  }
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:6.70pt!important;letter-spacing:0!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:6.45pt!important;letter-spacing:0!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:6.15pt!important;letter-spacing:0!important}
-
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:6.50pt!important;letter-spacing:0!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:6.25pt!important;letter-spacing:0!important}
-  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:6.00pt!important;letter-spacing:0!important}
-
-  .legacy-print-page .legacy-grade-choices{gap:1.1mm!important}
-  .legacy-print-page .legacy-grade-choice{
-    border:.42pt solid #9fb2c6!important;
-    border-radius:1.1mm!important;
-    padding:1.2mm .75mm!important;
-    background:#fff!important;
-    color:#263748!important;
-    font-size:6.45pt!important;
-    font-weight:600!important;
-    line-height:1.2!important;
-    box-shadow:none!important;
-  }
-  .legacy-print-page .legacy-grade-choice.active{
-    background:#f1f6fb!important;
-    border-color:#4b84ba!important;
-    color:#124f8d!important;
-    font-weight:700!important;
-  }
-  .legacy-print-page .legacy-grade-choice .box{
-    min-width:1em!important;
-    margin-right:.45mm!important;
-    font-weight:700!important;
-  }
-}
-</style>
-
-<style id="v4316-pdf-natural-table-baseline">
+<style id="v4318-pdf-typography-system">
 /* =========================================================
-   Web V4.3.16｜表格視覺基線自然化
-   以 V4.3.14 為基底，撤掉 V4.3.15 過度一致化的方向。
-   只處理真正需要分層的標題；保留原始自然 padding。
-   不改欄寬、列高、Zoom、Capture、A～E、主資料字級。
+   Web V4.3.18｜PDF 字體規格統一
+   原則：
+   1. 上半部正式表格只使用一套字型。
+   2. 只使用 400 / 600 / 700 標準字重，避免 Safari 合成粗體。
+   3. 一般欄位固定同字級；商品名稱不再依 fit-md/sm/xs 改字級。
+   4. 不改欄寬、列高、padding 結構、Zoom、Capture。
    ========================================================= */
 
-/* 一般 .lab 完全沿用 V4.3.14：
-   font-weight:600（來自 V4.3.12），自然 padding 4px 6px，
-   vertical-align:middle（既有 master table 規則）。 */
+.legacy-print-page.pdf-capture .legacy-doc{
+  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
+  font-synthesis:none!important;
+  font-kerning:normal!important;
+}
 
-/* ① 右上 mini 標題：保持中央，但放鬆字面，不再硬壓基線 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-mini-head{
-  font-size:8.55px!important;
+/* ---------- 上半部主表：統一基本字體 ---------- */
+.legacy-print-page.pdf-capture .legacy-master-table{
+  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
+  font-size:9.3px!important;
+  font-weight:400!important;
+  line-height:1.18!important;
+  letter-spacing:0!important;
+}
+
+.legacy-print-page.pdf-capture .legacy-master-table td,
+.legacy-print-page.pdf-capture .legacy-master-table th{
+  font-family:inherit!important;
+  vertical-align:middle!important;
+  letter-spacing:0!important;
+  font-synthesis:none!important;
+}
+
+/* 一般資料值：全部同一尺寸 */
+.legacy-print-page.pdf-capture .legacy-master-table td:not(.lab):not(.amount-val):not(.legacy-imei-cell):not(.legacy-scan-cell){
+  font-size:9.3px!important;
+  font-weight:400!important;
+  line-height:1.18!important;
+}
+
+/* 一般淺藍標題：全部同一尺寸 */
+.legacy-print-page.pdf-capture .legacy-master-table .lab{
+  font-size:9.3px!important;
   font-weight:600!important;
-  line-height:1.20!important;
+  line-height:1.12!important;
   text-align:center!important;
   vertical-align:middle!important;
+  letter-spacing:0!important;
+}
+
+/* 右上五個 mini 標題：只比一般標題小一級 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-mini-head{
+  font-size:8.35px!important;
+  font-weight:600!important;
+  line-height:1.12!important;
   white-space:nowrap!important;
   padding-left:2px!important;
   padding-right:2px!important;
 }
 
-/* ② 真正的第二層區段標題：申報單位／掃描編號 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-section-head{
-  font-size:9.15px!important;
-  font-weight:700!important;
-  line-height:1.18!important;
-  text-align:center!important;
-  vertical-align:middle!important;
-  letter-spacing:0!important;
-}
-
-/* ③ 三個藍底主標題：取消人工字距，只保留自然中文字距 */
+/* 藍底主標題 */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-master-left-title,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-right-title{
-  font-weight:800!important;
-  line-height:1.18!important;
-  letter-spacing:0!important;
-  text-align:center!important;
-  vertical-align:middle!important;
-}
-
-/* 賣方立書人資料沿用原本 flex 置中，只拿掉 .5px 人工字距 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-seller-bar>span{
-  font-weight:800!important;
-  line-height:1.18!important;
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-right-title,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-seller-bar{
+  font-size:9.6px!important;
+  font-weight:700!important;
+  line-height:1.14!important;
   letter-spacing:0!important;
 }
 
-/* ④ 商品名稱：V4.3.14 智慧縮放保留，
-   明確 <wbr> 斷點優先，不用負字距、不用 anywhere 硬拆中文字。 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-r3 .legacy-product-fit,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
+/* 商品名稱：PDF 中固定同一字級，不再 fit-md/sm/xs 大小跳動 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-md,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-sm,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-xs,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-md,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-sm,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-xs{
+  font-family:inherit!important;
+  font-size:9.0px!important;
+  font-weight:400!important;
+  line-height:1.18!important;
+  letter-spacing:0!important;
   white-space:normal!important;
   overflow-wrap:normal!important;
   word-break:normal!important;
+}
+
+/* 身分證／日期／地址等資料跟一般資料同級 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-id-cell,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell,
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-center{
+  font-size:9.3px!important;
+  font-weight:400!important;
+  line-height:1.18!important;
   letter-spacing:0!important;
 }
-</style>
 
-
-<style id="v4317-pdf-optical-centering">
-/* =========================================================
-   Web V4.3.17｜標籤光學置中＋中英字距
-   只修文字，不改任何表格幾何尺寸。
-   ========================================================= */
-
-/* ① 一般淺藍標籤：
-   4px 上下 padding 在 Safari PDF 會讓中文字視覺略偏下，
-   改為對稱 2px，保留左右 6px，列高完全不動。 */
-.legacy-print-page.pdf-capture .legacy-master-table .lab:not(.legacy-mini-head):not(.amount-lab){
-  padding-top:2px!important;
-  padding-bottom:2px!important;
-  padding-left:6px!important;
-  padding-right:6px!important;
-  vertical-align:middle!important;
-  text-align:center!important;
+/* 金額是唯一刻意放大的資料 */
+.legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
+  font-size:9.3px!important;
+  font-weight:700!important;
   line-height:1.12!important;
-  font-weight:600!important;
-  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
+}
+.legacy-print-page.pdf-capture .legacy-master-table .amount-val{
+  font-family:inherit!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:1.12!important;
+  letter-spacing:0!important;
 }
 
-/* 讓四字/五字中文 label 稍微有呼吸感，不再黏成一團 */
-.legacy-print-page.pdf-capture .legacy-master-table .lab:not(.legacy-mini-head):not(.amount-lab){
-  letter-spacing:.18px!important;
+/* IMEI 下方文字固定一級較小 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-imei-num{
+  font-family:inherit!important;
+  font-size:8.4px!important;
+  font-weight:400!important;
+  letter-spacing:0!important;
 }
 
-/* ② 右上 mini 標題維持自己的尺寸，但字重略降，避免小格內太黑 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-mini-head{
+/* 法規備註：固定輔助資訊層級 */
+.legacy-print-page.pdf-capture .legacy-master-table .legacy-unit-note{
+  font-family:inherit!important;
+  font-size:8.25px!important;
+  font-weight:400!important;
+  line-height:1.28!important;
+  letter-spacing:0!important;
+}
+
+/* ---------- A-E 檢測格：保留正式文件風 ---------- */
+.legacy-print-page.pdf-capture .legacy-grade-choices{
+  gap:1.1mm!important;
+}
+.legacy-print-page.pdf-capture .legacy-grade-choice{
   font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-size:8.45px!important;
-  font-weight:550!important;
+  font-size:8.6px!important;
+  font-weight:400!important;
   line-height:1.16!important;
   letter-spacing:0!important;
-  vertical-align:middle!important;
-  text-align:center!important;
-  padding-top:2px!important;
-  padding-bottom:2px!important;
+  border:1px solid #a9b8c8!important;
+  border-radius:3px!important;
+  padding:4px 3px!important;
+  background:#fff!important;
+  color:#2b3847!important;
+  box-shadow:none!important;
+  font-synthesis:none!important;
+}
+.legacy-print-page.pdf-capture .legacy-grade-choice.active{
+  background:#f2f7fc!important;
+  border-color:#4b84ba!important;
+  color:#124f8d!important;
+  font-weight:600!important;
+  box-shadow:none!important;
+}
+.legacy-print-page.pdf-capture .legacy-grade-choice .box{
+  font-weight:600!important;
+  margin-right:2px!important;
 }
 
-/* ③ 區段標題「申報單位／掃描編號」保留較高層級 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-section-head{
-  font-weight:650!important;
-  line-height:1.14!important;
-  letter-spacing:.08px!important;
-}
-
-/* ④ 商品名稱：指定同一組字型順序，避免英中混排時 fallback 指標不同 */
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-r3 .legacy-product-fit,
-.legacy-print-page.pdf-capture .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
-  font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-weight:500!important;
-  letter-spacing:0!important;
-  line-height:1.28!important;
-  white-space:normal!important;
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-}
-
-/* 黃底重要標題維持原本層級 */
-.legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
-  vertical-align:middle!important;
-  text-align:center!important;
-  font-weight:900!important;
-}
+/* 下方聲明區沿用 V4.3.12 已確認舒服的層級，不在本版重排。 */
 </style>
-
 </body>
 </html>
