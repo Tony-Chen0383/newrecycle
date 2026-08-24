@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.1</title>
+<title>創宇新機回收管理系統｜Web V4.3.8</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -3059,7 +3059,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.1';
+const APP_VERSION='Web V4.3.8';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4754,6 +4754,80 @@ async function signedImageToDataUrl(url){
    fr.readAsDataURL(blob);
  });
 }
+
+function normalizeFormalPdfCanvasToGoldenReference(sourceCanvas){
+  // Golden Reference = 使用者確認最理想的 V4.3.1 PDF。
+  // 該 PDF 的 html2canvas 原始影像為 1588×2246，
+  // 可見文件寬度約 1468px（左右各約 60px）。
+  //
+  // 某些 Safari / Browser 狀態會把整份 DOM 等比例縮成約 75.5%，
+  // 但 Canvas 本身仍維持 1588×2246，造成整張文件縮在左上角。
+  // 此函式只修正「整張 raster capture 的全域比例」，
+  // 完全不改任何 HTML / CSS / 欄寬 / 列高 / 字級。
+  if(!sourceCanvas?.width || !sourceCanvas?.height) return sourceCanvas;
+
+  const ctx=sourceCanvas.getContext('2d',{willReadFrequently:true});
+  if(!ctx) return sourceCanvas;
+
+  let imageData;
+  try{
+    imageData=ctx.getImageData(0,0,sourceCanvas.width,sourceCanvas.height);
+  }catch(e){
+    safeProductionError('pdf_canvas_measure',e,'PDF_CANVAS_MEASURE_ERROR');
+    return sourceCanvas;
+  }
+
+  const d=imageData.data;
+  const w=sourceCanvas.width, h=sourceCanvas.height;
+  let minX=w,minY=h,maxX=-1,maxY=-1;
+
+  // 每 2px 取樣即可辨識整張文件 bbox，速度比逐 pixel 快很多。
+  const step=2;
+  for(let y=0;y<h;y+=step){
+    for(let x=0;x<w;x+=step){
+      const i=(y*w+x)*4;
+      // 非接近白色即視為文件內容。
+      if(d[i]<245 || d[i+1]<245 || d[i+2]<245){
+        if(x<minX)minX=x;
+        if(x>maxX)maxX=x;
+        if(y<minY)minY=y;
+        if(y>maxY)maxY=y;
+      }
+    }
+  }
+
+  if(maxX<minX || maxY<minY) return sourceCanvas;
+
+  const visibleW=maxX-minX+1;
+  const targetVisibleW=1468; // Golden V4.3.1 reference at 1588px canvas width.
+  let factor=targetVisibleW/visibleW;
+
+  // 正常 V4.3.1 本來就接近 1.0，不做任何處理。
+  // 只有全域縮放明顯異常時才校正。
+  if(!Number.isFinite(factor) || factor<1.08 || factor>1.45){
+    return sourceCanvas;
+  }
+
+  const out=document.createElement('canvas');
+  out.width=w;
+  out.height=h;
+  const octx=out.getContext('2d');
+  if(!octx)return sourceCanvas;
+
+  octx.fillStyle='#fff';
+  octx.fillRect(0,0,w,h);
+
+  // 錯誤輸出與 Golden Reference 的 bbox 顯示縮放原點就是左上角，
+  // 因此直接從 (0,0) 放大即可還原原版型，不重新排版。
+  octx.drawImage(
+    sourceCanvas,
+    0,0,w,h,
+    0,0,w*factor,h*factor
+  );
+
+  return out;
+}
+
 async function createFormalPdfFromRecord(rec,signatureUrl){
  if(!rec?.id||!rec?.record_no||!rec?.sign_session_id){
    throw new Error('PDF_FINALIZED_RECORD_REQUIRED');
@@ -4811,9 +4885,12 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
    if(!canvas?.width||!canvas?.height)throw new Error('PDF_RENDER_EMPTY');
 
+   // V4.3.8：不改 DOM/CSS，只在 capture 完成後校正 Safari / Browser 全域縮放異常。
+   const normalizedCanvas=normalizeFormalPdfCanvasToGoldenReference(canvas);
+
    const {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-   const imgData=canvas.toDataURL('image/jpeg',0.96);
+   const imgData=normalizedCanvas.toDataURL('image/jpeg',0.96);
 
    pdf.setProperties({
      title:`Formal Recycle Declaration ${rec.record_no}`,
