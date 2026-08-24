@@ -7,7 +7,8 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>創宇新機回收管理系統｜Web V4.2.25</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
+<title>創宇新機回收管理系統｜Web V4.2.28</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -3030,7 +3031,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.2.27';
+const APP_VERSION='Web V4.2.28';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -3095,9 +3096,15 @@ function sanitizeDirectStrings(obj){
  Object.keys(out).forEach(k=>{if(typeof out[k]==='string')out[k]=escHtml(out[k])});
  return out;
 }
-function safeBackendError(context,error){
- const code=String(error?.code||'BACKEND_ERROR').replace(/[^A-Z0-9_-]/gi,'').slice(0,40)||'BACKEND_ERROR';
+function safeProductionError(context,error,fallback='CLIENT_ERROR'){
+ const code=String(error?.code||fallback).replace(/[^A-Z0-9_-]/gi,'').slice(0,40)||fallback;
+ // Production 僅保留去敏後的 context + code，不輸出 Supabase/PostgreSQL error object、
+ // message/details/hint、客資、token、session id 或 payload。
  console.warn(`[${context}]`,code);
+ return code;
+}
+function safeBackendError(context,error){
+ safeProductionError(context,error,'BACKEND_ERROR');
  return '系統驗證未通過或暫時無法連線，請重新登入後再試。';
 }
 function securityRef(prefix='SEC'){
@@ -3166,7 +3173,7 @@ async function requireServerAuth(roles=[]){
    resetIdleTimer();
    return true;
  }catch(e){
-   console.error('requireServerAuth',e);
+   safeProductionError('requireServerAuth',e,'AUTH_ERROR');
    lockAppToLogin('安全驗證失敗，請重新登入。');
    return false;
  }
@@ -3296,7 +3303,7 @@ async function boot(){
    $('loginScreen').classList.remove('hidden');
    setLoginStage('credentials');
    modal('系統連線失敗','<div class="notice warn">目前無法連線至公司系統，請稍後再試或通知資訊部。</div>');
-   console.error('boot',e);
+   safeProductionError('boot',e,'BOOT_ERROR');
  }
 }
 async function saveSetup(){
@@ -3414,7 +3421,7 @@ async function login(){
    setLoginStage('store',profile);
    if($('loginSecurityNote'))$('loginSecurityNote').textContent='帳號已通過安全驗證；現在只需選擇本次作業門市，不需要再次輸入帳號或密碼。';
  }catch(e){
-   console.error('login',e);
+   safeProductionError('login',e,'LOGIN_ERROR');
    try{await sb.auth.signOut()}catch(_){}
    currentUser=null;pendingLoginProfile=null;allowedStores=[];
    fillStoreSelect($('loginStoreSelect'),[],'登入後載入授權門市');
@@ -3454,7 +3461,7 @@ async function finalizeLogin(profile,store){
 async function logout(){
  const cleared=await resetCurrentOrder();
  if(cleared===false)return;
- if(sb)try{await sb.auth.signOut()}catch(e){console.warn('signOut',e)}
+ if(sb)try{await sb.auth.signOut()}catch(e){safeProductionError('signOut',e,'SIGNOUT_ERROR')}
  clearTimeout(idleLogoutTimer);
  currentUser=null;currentStore=null;allowedStores=[];pendingLoginProfile=null;
  $('mainApp').classList.add('hidden');$('loginScreen').classList.remove('hidden');
@@ -4434,10 +4441,7 @@ async function createRecord(){
  const currentAuthId=authCheck?.user?.id||'';
  const clientMismatches=finalizeClientMismatchKeys(payload,sc,currentAuthId);
  if(clientMismatches.length){
-   console.error('finalize client mismatch',{
-     mismatches:clientMismatches,
-     sign_session_id:sc.id
-   });
+   safeProductionError('finalize_client_mismatch',{code:'CLIENT_SNAPSHOT_MISMATCH'},'CLIENT_SNAPSHOT_MISMATCH');
    return finalizeDiagnosticModal({
      code:'CLIENT_SNAPSHOT_MISMATCH',
      message:clientMismatches.join(',')
@@ -4450,11 +4454,6 @@ async function createRecord(){
  });
 
  if(error){
-   console.error('finalize_recycle_record',{
-     error,
-     sign_session_id:sc.id,
-     record_no:sc.record_no
-   });
    return finalizeDiagnosticModal(error,clientMismatches);
  }
 
@@ -4563,7 +4562,7 @@ async function printDeclaration(){
      }
    }
  }catch(e){
-   console.warn('print signature load failed',e);
+   safeProductionError('print_signature_load',e,'PRINT_ASSET_ERROR');
  }
  if(!signatureUrl)return modal('簽名尚未載入','<div class="notice warn">正式回收單已建立，但目前無法讀取電子簽名。請確認網路連線後重新按「列印切結書」，避免列印出沒有簽名的文件。</div>');
  if(record)fillPrintSheetFromRecord(record,signatureUrl);
@@ -4637,7 +4636,7 @@ async function loadRecords(){
  if(startDate)query=query.gte('created_at',`${startDate}T00:00:00`);
  if(endDate)query=query.lte('created_at',`${endDate}T23:59:59`);
  const {data,error}=await query;
- if(error){console.error('loadRecords',error);return modal('查詢失敗','<div class="notice warn">目前無法讀取授權範圍內的回收紀錄。</div>')}
+ if(error){safeBackendError('loadRecords',error);return modal('查詢失敗','<div class="notice warn">目前無法讀取授權範圍內的回收紀錄。</div>')}
  $('recordBody').innerHTML=(data||[]).map(r=>`<tr>
    <td>${escHtml((r.created_at||'').slice(0,10))}</td>
    <td>${escHtml(r.record_no)}</td>
@@ -4655,7 +4654,7 @@ async function loadRecords(){
 window.viewRecord=async id=>{
  if(!await requireServerAuth())return;
  const {data,error}=await sb.from('recycle_records').select('*').eq('id',id).single();
- if(error){console.error('viewRecord',error);return modal('查詢失敗','<div class="notice warn">無法讀取此回收單，可能已超出目前帳號的授權範圍。</div>')}
+ if(error){safeBackendError('viewRecord',error);return modal('查詢失敗','<div class="notice warn">無法讀取此回收單，可能已超出目前帳號的授權範圍。</div>')}
  modal('回收單明細',`<div class="grid2">
    <div><b>製單編號</b><p>${escHtml(data.record_no)}</p></div>
    <div><b>門市</b><p>${escHtml(data.store_name_snapshot)}</p></div>
@@ -4968,7 +4967,7 @@ async function publishPrice(){
 async function loadUsers(){
  if(!await requireServerAuth(['hq_admin']))return;
  const {data,error}=await sb.from('profiles').select('id,employee_no,name,role,status').order('employee_no');
- if(error){console.error('loadUsers',error);return modal('人員讀取失敗','<div class="notice warn">目前無法讀取人員資料。</div>')}
+ if(error){safeBackendError('loadUsers',error);return modal('人員讀取失敗','<div class="notice warn">目前無法讀取人員資料。</div>')}
  $('userBody').innerHTML=(data||[]).map(u=>`<tr>
    <td>${escHtml(u.employee_no)}</td><td>${escHtml(u.name)}</td><td>${escHtml(ROLE_LABEL[u.role]||u.role)}</td><td>${escHtml(STATUS_LABEL[u.status]||u.status)}</td><td>Supabase Auth</td>
    <td><button class="btn light" data-user-id="${escHtml(u.id)}">編輯</button></td>
@@ -4987,7 +4986,7 @@ window.editUser=async(id,name,role,status)=>{
    return modal('輸入錯誤','<div class="notice warn">權限或狀態代碼不正確。</div>');
  }
  const {error}=await sb.rpc('admin_update_profile',{p_profile_id:id,p_name:n.trim(),p_role:r.trim(),p_status:s.trim()});
- if(error){console.error('admin_update_profile',error);return modal('修改失敗','<div class="notice warn">伺服器拒絕此權限變更。</div>')}
+ if(error){safeBackendError('admin_update_profile',error);return modal('修改失敗','<div class="notice warn">伺服器拒絕此權限變更。</div>')}
  loadUsers();
 }
 function addUserGuide(){
@@ -5003,7 +5002,7 @@ function addUserGuide(){
 async function loadStoresAdmin(){
  if(!await requireServerAuth(['hq_admin']))return;
  const {data,error}=await sb.from('stores').select('*').order('store_name');
- if(error){console.error('loadStoresAdmin',error);return modal('門市讀取失敗','<div class="notice warn">目前無法讀取門市主檔。</div>')}
+ if(error){safeBackendError('loadStoresAdmin',error);return modal('門市讀取失敗','<div class="notice warn">目前無法讀取門市主檔。</div>')}
  $('storeBody').innerHTML=(data||[]).map(s=>`<tr>
    <td>${escHtml(s.store_code)}</td><td>${escHtml(s.store_name)}</td><td>${escHtml(STATUS_LABEL[s.status]||s.status)}</td>
    <td><button class="btn light" data-store-id="${escHtml(s.id)}">編輯</button></td>
@@ -5018,7 +5017,7 @@ async function addStore(){
  const name=$('sName').value.trim(),code=$('sCode').value.trim();if(!name||!code)return;
  const status=STATUS_CODE[$('sStatus').value]||'active';
  const {error}=await sb.rpc('admin_add_store',{p_store_code:code,p_store_name:name,p_status:status});
- if(error){console.error('admin_add_store',error);return modal('新增失敗','<div class="notice warn">伺服器拒絕新增門市，請確認代碼或名稱是否重複。</div>')}
+ if(error){safeBackendError('admin_add_store',error);return modal('新增失敗','<div class="notice warn">伺服器拒絕新增門市，請確認代碼或名稱是否重複。</div>')}
  await loadStoresAdmin();
 }
 window.editStore=async(id,name,status)=>{
@@ -5027,7 +5026,7 @@ window.editStore=async(id,name,status)=>{
  const s=prompt('狀態：active / disabled',status);if(s===null)return;
  if(!['active','disabled'].includes(s.trim()))return modal('輸入錯誤','<div class="notice warn">狀態只能是 active 或 disabled。</div>');
  const {error}=await sb.rpc('admin_update_store',{p_store_id:id,p_store_name:n.trim(),p_status:s.trim()});
- if(error){console.error('admin_update_store',error);return modal('修改失敗','<div class="notice warn">伺服器拒絕此門市變更。</div>')}
+ if(error){safeBackendError('admin_update_store',error);return modal('修改失敗','<div class="notice warn">伺服器拒絕此門市變更。</div>')}
  await loadStoresAdmin();
  if(currentUser)await populateLoginStores();
 }
@@ -5273,13 +5272,12 @@ async function hardClearCreateForm(event,options={}){
    return true;
 
  }catch(err){
-   console.error('安全清空失敗：',err);
-   modal('清空失敗',`
-     <div class="notice warn">
-       ${err?.message||err}<br><br>
-       系統沒有刪除 Supabase 的正式回收紀錄，請稍後再試。
-     </div>
-   `);
+   backendFailureModal(
+     '清空失敗',
+     'safe_clear',
+     err,
+     '系統沒有刪除任何正式回收紀錄。'
+   );
    return false;
  }finally{
    if(clearBtn){
@@ -5300,6 +5298,15 @@ let currentSignStatus='';
 function baseSignUrl(t){return `${location.href.split('#')[0]}#sign=${encodeURIComponent(t)}`}
 function randomToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);return [...a].map(b=>b.toString(16).padStart(2,'0')).join('')}
 function claimStorageKey(token){return `smartmobile_sign_claim_${token}`}
+function clearCustomerSignBrowserArtifacts(token){
+ if(!token)return;
+ try{localStorage.removeItem(claimStorageKey(token))}catch(e){}
+ try{
+   if(checkHashSign()===token){
+     history.replaceState(null,'',location.href.split('#')[0]);
+   }
+ }catch(e){}
+}
 function getOrCreateCustomerClaimKey(token){
  const keyName=claimStorageKey(token);
  let key='';
@@ -5466,7 +5473,7 @@ async function loadCustomerSignPage(token){
 
  if(error){
    $('signSessionStatus').className='notice warn';
-   console.error('claim_sign_session',error);
+   safeBackendError('claim_sign_session',error);
     $('signSessionStatus').innerHTML='QR Code 認領失敗。<br><span class="sub">此連結可能已失效、已被其他裝置認領，或目前網路異常。</span>';
    return;
  }
@@ -6361,10 +6368,8 @@ async function cancelCustomerRecycle(){
    clearSignature();
    if($('agreeDeclaration'))$('agreeDeclaration').checked=false;
 
-   // 舊 QR 已取消；本機也移除該 token 的 claim key。
-   try{
-     localStorage.removeItem(`smartmobile_sign_claim_${customerSession.token}`);
-   }catch(e){}
+   // 舊 QR 已取消；清除 claim key 與網址列 token，降低共用手機殘留。
+   clearCustomerSignBrowserArtifacts(customerSession.token);
 
    customerSession.status='cancelled';
    customerClaimKey='';
@@ -6378,7 +6383,7 @@ async function cancelCustomerRecycle(){
      $('signSessionStatus').innerHTML='<b>本次回收已由客戶取消。</b><br><span class="sub">此 QR Code 已失效，如需重新回收請由門市重新建立。</span>';
    }
  }catch(e){
-   console.error('cancelCustomerRecycle',e);
+   safeProductionError('cancelCustomerRecycle',e,'CANCEL_ERROR');
    if(btn){
      btn.disabled=false;
      btn.textContent='取消本次回收';
@@ -6452,6 +6457,10 @@ async function submitCustomerSign(){
    });
    if(error){safeBackendError('complete_sign_session',error);throw new Error('電子簽署送出失敗，請稍後再試。')}
 
+   // 已完成的 QR 不再需要 claim key；同時移除網址列 token，降低共用手機殘留。
+   clearCustomerSignBrowserArtifacts(t);
+   customerClaimKey='';
+
    if(statusEl){
      statusEl.className='sign-submit-status done';
      statusEl.textContent='✓ 電子簽署完成';
@@ -6462,7 +6471,7 @@ async function submitCustomerSign(){
    $('customerComplete').classList.remove('hidden');
    $('customerCompleteNo').textContent='交易單號：'+customerSession.record_no;
  }catch(e){
-   console.error('submitCustomerSign error',e);
+   safeProductionError('submitCustomerSign',e,'SIGN_SUBMIT_ERROR');
    if(statusEl){
      statusEl.className='sign-submit-status error';
      statusEl.textContent='送出失敗，請勿離開頁面，可再次按送出重試。';
