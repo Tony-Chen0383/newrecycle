@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.7</title>
+<title>創宇新機回收管理系統｜Web V4.3.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -1280,34 +1280,6 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
   }
   .legacy-print-page .legacy-declare-top-left .read{
     font-size:6.85pt !important;
-  }
-}
-
-/* Web V4.3.7｜V4.3.1 基準，只縮「請詳閱下述內容…／立書人親簽」藍底列文字 */
-.legacy-declare-top-left{
-  font-size:8.1px !important;
-  line-height:1.18 !important;
-}
-.legacy-declare-top-left .read{
-  font-size:8.1px !important;
-  margin-right:8px !important;
-}
-.legacy-declare-top-right{
-  font-size:8.4px !important;
-  line-height:1.18 !important;
-}
-@media print{
-  .legacy-print-page .legacy-declare-top-left{
-    font-size:6.0pt !important;
-    line-height:1.16 !important;
-  }
-  .legacy-print-page .legacy-declare-top-left .read{
-    font-size:6.0pt !important;
-    margin-right:2.2mm !important;
-  }
-  .legacy-print-page .legacy-declare-top-right{
-    font-size:6.2pt !important;
-    line-height:1.16 !important;
   }
 }
 
@@ -3087,7 +3059,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.7';
+const APP_VERSION='Web V4.3.1';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
