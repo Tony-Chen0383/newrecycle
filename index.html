@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.12</title>
+<title>創宇新機回收管理系統｜Web V4.3.13</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2611,7 +2611,7 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.12｜正式文件字體層級優化
+   Web V4.3.13｜商品名稱可讀性＋檢測選項正式文件化
    僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.12';
+const APP_VERSION='Web V4.3.13';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -6983,5 +6983,91 @@ window.addEventListener('hashchange',()=>{
 bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();updateQrPreviewState();renderPriceOverview();bootByCurrentRoute();
 </script>
 
+
+<style id="v4313-pdf-product-grade-polish">
+/* V4.3.13｜商品名稱可讀性＋檢測選項正式文件化 */
+.legacy-master-table .legacy-master-r3 .legacy-product-fit{
+  font-size:9.8px!important;
+  line-height:1.18!important;
+  font-weight:600!important;
+}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit{
+  font-size:9.35px!important;
+  line-height:1.18!important;
+  font-weight:500!important;
+}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:9.5px!important}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:9.1px!important}
+.legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:8.7px!important;letter-spacing:-.1px}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:9.1px!important}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:8.7px!important}
+.legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:8.35px!important;letter-spacing:-.08px}
+
+.legacy-grade-choice{
+  border:1px solid #a9b8c8!important;
+  border-radius:3px!important;
+  padding:4px 3px!important;
+  background:#fff!important;
+  color:#2b3847!important;
+  font-weight:600!important;
+  box-shadow:none!important;
+  line-height:1.24!important;
+}
+.legacy-grade-choice.active{
+  background:#f2f7fc!important;
+  border-color:#4b84ba!important;
+  color:#124f8d!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+}
+.legacy-grade-choice .box{
+  display:inline-block!important;
+  min-width:1.05em!important;
+  margin-right:2px!important;
+  font-weight:700!important;
+}
+
+@media print{
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit{
+    font-size:7.15pt!important;
+    line-height:1.18!important;
+    font-weight:600!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit{
+    font-size:6.85pt!important;
+    line-height:1.18!important;
+    font-weight:500!important;
+  }
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-md{font-size:6.9pt!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-sm{font-size:6.55pt!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r3 .legacy-product-fit.fit-xs{font-size:6.2pt!important;letter-spacing:-.08pt}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-md{font-size:6.65pt!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-sm{font-size:6.35pt!important}
+  .legacy-print-page .legacy-master-table .legacy-master-r7 .legacy-goods-fit.fit-xs{font-size:6.05pt!important;letter-spacing:-.06pt}
+  .legacy-print-page .legacy-grade-choices{gap:1.1mm!important}
+  .legacy-print-page .legacy-grade-choice{
+    border:.42pt solid #9fb2c6!important;
+    border-radius:1.1mm!important;
+    padding:1.2mm .75mm!important;
+    background:#fff!important;
+    color:#263748!important;
+    font-size:6.45pt!important;
+    font-weight:600!important;
+    line-height:1.2!important;
+    box-shadow:none!important;
+  }
+  .legacy-print-page .legacy-grade-choice.active{
+    background:#f1f6fb!important;
+    border-color:#4b84ba!important;
+    color:#124f8d!important;
+    font-weight:700!important;
+  }
+  .legacy-print-page .legacy-grade-choice .box{
+    min-width:1em!important;
+    margin-right:.45mm!important;
+    font-weight:700!important;
+  }
+}
+</style>
 </body>
 </html>
