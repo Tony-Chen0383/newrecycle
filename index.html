@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.4</title>
+<title>創宇新機回收管理系統｜Web V4.3.5</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -819,40 +819,153 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 .legacy-print-page .legacy-sign-space{height:19mm}
 .legacy-print-page .legacy-footer{margin-top:3.2mm;font-size:6.2pt}
 
-/* Web V4.3.4｜PDF 原比例 A4 修正版
-   重要：
-   1. 保留 V4.3.0 原始 920px 文件寬度 / 欄位 / 字體比例。
-   2. 不把文件改成 794px，避免文字換行後整頁被縮小。
-   3. PDF Capture 使用接近 A4 的 920 × 1301 基準畫布。
-   4. 文件內容從頁首正常開始，頁尾使用 flex 沉底。
-*/
-.legacy-print-page.pdf-capture-v434{
-  width:920px;
-  min-width:920px;
-  min-height:1301px;
-  background:#fff;
-  display:flex;
-  flex-direction:column;
-  overflow:visible;
-}
-.legacy-print-page.pdf-capture-v434 .legacy-doc{
+/* =========================================================
+   Web V4.3.5｜正式 PDF 自然 A4 舒展版
+   - 保留原始 920px 寬度與欄位比例
+   - 僅在 PDF capture 時增加列高 / 行距 / 區塊間距
+   - 不使用 scaleY、不拉伸文字、不硬鎖整頁高度
+   ========================================================= */
+.legacy-print-page.pdf-capture-v435 .legacy-doc{
   width:920px;
   max-width:920px;
-  min-height:1301px;
   margin:0;
-  padding:16px 22px 12px;
+  padding:18px 22px 14px;
   border:0;
   box-shadow:none;
-  display:flex;
-  flex-direction:column;
 }
-.legacy-print-page.pdf-capture-v434 .legacy-head{
+
+/* Header：維持原比例，只略增上下呼吸感 */
+.legacy-print-page.pdf-capture-v435 .legacy-head{
+  grid-template-columns:250px 1fr 200px;
+  gap:8px;
   margin-top:0;
+  margin-bottom:12px;
 }
-.legacy-print-page.pdf-capture-v434 .legacy-footer{
-  margin-top:auto;
-  padding-top:8px;
-  padding-bottom:0;
+.legacy-print-page.pdf-capture-v435 .legacy-head img{
+  width:228px;
+  max-height:74px;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-head h2{
+  font-size:25px;
+  letter-spacing:4px;
+  line-height:1.18;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-head-date{
+  font-size:12.6px;
+  gap:4px;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-head-docno{
+  font-size:10px;
+}
+
+/* 主表格：用 row height 拉開，不縮字、不改欄寬 */
+.legacy-print-page.pdf-capture-v435 .legacy-master-r0{height:44px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r1,
+.legacy-print-page.pdf-capture-v435 .legacy-master-r2,
+.legacy-print-page.pdf-capture-v435 .legacy-master-r3{height:42px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r4,
+.legacy-print-page.pdf-capture-v435 .legacy-master-r5{height:43px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r6{height:42px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r7{height:44px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r8,
+.legacy-print-page.pdf-capture-v435 .legacy-master-r9,
+.legacy-print-page.pdf-capture-v435 .legacy-master-r10{height:39px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r11{height:50px!important}
+.legacy-print-page.pdf-capture-v435 .legacy-master-r12{height:48px!important}
+
+.legacy-print-page.pdf-capture-v435 .legacy-table{
+  font-size:9.2px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-table th,
+.legacy-print-page.pdf-capture-v435 .legacy-table td{
+  padding:5px 6px!important;
+  line-height:1.35!important;
+  vertical-align:middle!important;
+}
+
+/* IMEI 保持可讀，不因 row 高增加而放大條碼 */
+.legacy-print-page.pdf-capture-v435 .legacy-imei-wrap{
+  min-height:56px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-imei-wrap svg{
+  height:34px!important;
+  max-width:170px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-imei-num{
+  font-size:8px!important;
+  margin-top:-2px!important;
+}
+
+/* 商品檢測區：加高兩列 */
+.legacy-print-page.pdf-capture-v435 .legacy-detect{
+  font-size:9px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-detect tr:first-child{
+  height:36px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-detect tr:last-child{
+  height:46px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-detect th,
+.legacy-print-page.pdf-capture-v435 .legacy-detect td{
+  padding:5px 7px!important;
+  line-height:1.35!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-grade-choice{
+  font-size:9px!important;
+  padding:6px 4px!important;
+  line-height:1.32!important;
+}
+
+/* 聲明區：真正把內容「舒展」，而不是把整張圖拉高 */
+.legacy-print-page.pdf-capture-v435 .legacy-declare{
+  grid-template-columns:1fr 155px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-declare-top{
+  min-height:40px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-declare-top-left,
+.legacy-print-page.pdf-capture-v435 .legacy-declare-top-right{
+  min-height:40px!important;
+  padding-top:7px!important;
+  padding-bottom:7px!important;
+  line-height:1.35!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-declare-body{
+  font-size:8px!important;
+  line-height:1.52!important;
+  padding:8px 9px 7px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-declare-body .sec{
+  margin-bottom:7px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-declare-body .sec-title{
+  font-size:8.4px!important;
+  line-height:1.4!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-sign-col{
+  min-height:292px!important;
+  padding:0 6px 6px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-sign-title{
+  min-height:40px!important;
+  height:40px!important;
+  font-size:10px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-sign-img{
+  max-width:138px!important;
+  height:98px!important;
+}
+.legacy-print-page.pdf-capture-v435 .legacy-sign-space{
+  height:98px!important;
+}
+
+/* Footer 不用 auto 撐出大片空白；緊接文件本體 */
+.legacy-print-page.pdf-capture-v435 .legacy-footer{
+  margin-top:12px!important;
+  padding-top:0!important;
+  font-size:8.5px!important;
+  line-height:1.3!important;
 }
 
 
@@ -3069,7 +3182,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.4';
+const APP_VERSION='Web V4.3.5';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4786,10 +4899,9 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
  }
 
  const previousStyle=root.getAttribute('style');
- const hadCaptureClass=page.classList.contains('pdf-capture-v434');
+ const hadCaptureClass=page.classList.contains('pdf-capture-v435');
 
  try{
-   // 保留 V4.3.0 原始 920px 版型，不再縮到 794px。
    root.style.display='block';
    root.style.position='fixed';
    root.style.left='-12000px';
@@ -4801,23 +4913,18 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
    root.style.zIndex='-9999';
    root.style.pointerEvents='none';
 
-   if(!hadCaptureClass)page.classList.add('pdf-capture-v434');
+   if(!hadCaptureClass)page.classList.add('pdf-capture-v435');
 
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    await waitForPrintAssets(7000);
    syncLegacyMasterSplit(root);
    await new Promise(resolve=>setTimeout(resolve,120));
 
-   // A4 比例基準：920px × 約1301px。
-   // 若內容真的超過 1301px，只增加 Capture 高度，不裁內容。
-   const captureWidth=920;
-   const captureHeight=Math.max(
-     1301,
-     page.scrollHeight||0,
-     doc.scrollHeight||0
-   );
+   // 只擷取文件本體，不把外層 page 的任何額外空白算進 PDF。
+   const captureWidth=Math.max(920,doc.scrollWidth||0,doc.offsetWidth||0);
+   const captureHeight=Math.max(1,doc.scrollHeight||0,doc.offsetHeight||0);
 
-   const canvas=await window.html2canvas(page,{
+   const canvas=await window.html2canvas(doc,{
      scale:2,
      useCORS:true,
      allowTaint:false,
@@ -4835,33 +4942,25 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
    const {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+
    const pageW=210,pageH=297;
-   const canvasRatio=canvas.width/canvas.height;
-   const a4Ratio=pageW/pageH;
+   const marginX=5,marginTop=4,marginBottom=5;
+   const maxW=pageW-(marginX*2);
+   const maxH=pageH-marginTop-marginBottom;
 
-   let imgW,imgH,x,y;
+   // 正常情況永遠先以寬度為準，保留原始欄位/字體比例。
+   let imgW=maxW;
+   let imgH=canvas.height*imgW/canvas.width;
 
-   if(Math.abs(canvasRatio-a4Ratio)<0.012){
-     // 正常情況：Capture 本身已接近 A4，直接滿版映射。
-     // 文件內已有自己的安全 padding，因此不另外製造大面積上下空白。
-     imgW=pageW;
-     imgH=pageH;
-     x=0;
-     y=0;
-   }else if(canvasRatio>a4Ratio){
-     // 文件較寬：以寬度為準，絕不裁切。
-     imgW=pageW;
-     imgH=pageW/canvasRatio;
-     x=0;
-     y=(pageH-imgH)/2;
-   }else{
-     // 極端長內容：以高度為準，完整保留、不裁切。
-     imgH=pageH;
-     imgW=pageH*canvasRatio;
-     x=(pageW-imgW)/2;
-     y=0;
+   // 只有內容真的高於 A4 可用高度時，才做必要的「等比例」縮小。
+   if(imgH>maxH){
+     const fit=maxH/imgH;
+     imgW*=fit;
+     imgH*=fit;
    }
 
+   const x=(pageW-imgW)/2;
+   const y=marginTop;
    const imgData=canvas.toDataURL('image/jpeg',0.96);
 
    pdf.setProperties({
@@ -4876,7 +4975,7 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
    pdf.save(formalPdfFileName(rec));
    return true;
  }finally{
-   if(!hadCaptureClass)page.classList.remove('pdf-capture-v434');
+   if(!hadCaptureClass)page.classList.remove('pdf-capture-v435');
    if(previousStyle===null)root.removeAttribute('style');
    else root.setAttribute('style',previousStyle);
  }
