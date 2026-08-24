@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.10</title>
+<title>創宇新機回收管理系統｜Web V4.3.11</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2608,6 +2608,33 @@ body.qr-transaction-locked #qrSignSection{
 
 </style>
 
+
+<style id="v4311-pdf-local-font-patch">
+/* =========================================================
+   Web V4.3.11｜PDF 局部字級精修
+   只作用於正式 PDF Capture。
+   不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
+   ========================================================= */
+
+/* 左側「請詳閱下述內容…」整列 */
+.legacy-print-page.pdf-capture .legacy-declare-top-left{
+  font-size:8.25px!important;
+  line-height:1.22!important;
+}
+
+/* 「請詳閱下述內容」前綴 */
+.legacy-print-page.pdf-capture .legacy-declare-top-left .read{
+  font-size:8.25px!important;
+  line-height:1.22!important;
+}
+
+/* 右側「立書人親簽」 */
+.legacy-print-page.pdf-capture .legacy-declare-top-right{
+  font-size:8.45px!important;
+  line-height:1.22!important;
+}
+</style>
+
 </head>
 <body>
 <div id="customerSignScreen" class="sign-screen hidden"><div class="sign-shell">
@@ -3059,7 +3086,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.10';
+const APP_VERSION='Web V4.3.11';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
