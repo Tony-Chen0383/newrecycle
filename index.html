@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.2</title>
+<title>創宇新機回收管理系統｜Web V4.3.3</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -819,48 +819,37 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 .legacy-print-page .legacy-sign-space{height:19mm}
 .legacy-print-page .legacy-footer{margin-top:3.2mm;font-size:6.2pt}
 
-/* Web V4.3.2｜正式 PDF 版面精修
-   - 維持 A4 固定比例
-   - 上下留白再收斂
-   - 左右保留列印安全邊界
-   - 頁尾固定沉底，避免內容視覺漂浮
+/* Web V4.3.3｜正式 PDF 自適應 A4 修正版
+   V4.3.2 的固定 1123px 高度會在內容較高時裁切。
+   本版改為「自然內容高度 → 完整擷取 → A4 等比例 Fit」。
 */
 .legacy-print-page.pdf-capture{
   width:794px;
-  height:1123px;
-  min-height:1123px;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
+  height:auto;
+  min-height:0;
+  overflow:visible;
+  display:block;
   background:#fff;
 }
 .legacy-print-page.pdf-capture .legacy-doc{
   width:794px;
   max-width:none;
-  height:1123px;
-  min-height:1123px;
-  padding:5.5mm 6mm 3.5mm;
+  height:auto;
+  min-height:0;
+  padding:5.5mm 6mm 4mm;
   border:0;
   box-shadow:none;
-  display:flex;
-  flex-direction:column;
+  display:block;
 }
 .legacy-print-page.pdf-capture .legacy-head{
   margin-top:0;
-  margin-bottom:1mm;
-}
-.legacy-print-page.pdf-capture .legacy-head img{
-  max-height:13mm;
-}
-.legacy-print-page.pdf-capture .legacy-head h2{
-  margin-top:0;
-  line-height:1.12;
+  margin-bottom:1.4mm;
 }
 .legacy-print-page.pdf-capture .legacy-head-date{
   padding-top:0;
 }
 .legacy-print-page.pdf-capture .legacy-footer{
-  margin-top:auto;
+  margin-top:2.8mm;
   padding-top:1.2mm;
   padding-bottom:0;
   line-height:1.25;
@@ -3080,7 +3069,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.2';
+const APP_VERSION='Web V4.3.3';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4816,6 +4805,10 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
    syncLegacyMasterSplit(root);
    await new Promise(resolve=>setTimeout(resolve,80));
 
+   // 先取得實際完整內容高度，不再把超出 A4 的內容裁掉。
+   const captureWidth=Math.max(794,page.scrollWidth||0,page.offsetWidth||0);
+   const captureHeight=Math.max(1,page.scrollHeight||0,page.offsetHeight||0);
+
    const canvas=await window.html2canvas(page,{
      scale:2,
      useCORS:true,
@@ -4823,9 +4816,9 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      backgroundColor:'#ffffff',
      logging:false,
      imageTimeout:7000,
-     windowWidth:794,
-     width:794,
-     height:1123,
+     windowWidth:captureWidth,
+     width:captureWidth,
+     height:captureHeight,
      scrollX:0,
      scrollY:0
    });
@@ -4844,8 +4837,19 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      keywords:`${rec.record_no}, recycle, formal-pdf, no-id`
    });
 
-   // V4.3.1：capture 直接固定為 A4 比例，避免置中縮放後產生過多上下留白。
-   pdf.addImage(imgData,'JPEG',0,0,210,297,undefined,'FAST');
+   // V4.3.3：完整內容等比例縮放進 A4。
+   // 不變形、不裁切；上方固定 4mm，左右自動置中，剩餘空間只留在頁尾。
+   const pageW=210,pageH=297;
+   const marginX=4,marginTop=4,marginBottom=4;
+   const maxW=pageW-(marginX*2);
+   const maxH=pageH-marginTop-marginBottom;
+   const mmPerPx=Math.min(maxW/canvas.width,maxH/canvas.height);
+   const imgW=canvas.width*mmPerPx;
+   const imgH=canvas.height*mmPerPx;
+   const x=(pageW-imgW)/2;
+   const y=marginTop;
+
+   pdf.addImage(imgData,'JPEG',x,y,imgW,imgH,undefined,'FAST');
    pdf.save(formalPdfFileName(rec));
    return true;
  }finally{
