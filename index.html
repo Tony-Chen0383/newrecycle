@@ -3030,7 +3030,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.2.26';
+const APP_VERSION='Web V4.2.27';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -6576,12 +6576,78 @@ const sideLogo=document.querySelector('.brand img');if($('loginLogo')&&!$('login
 applyPdfFormLogos();
 syncAppVersionUI();
 
-/* Web V4.2.26｜同一手機連續掃不同 QR 相容
-   iPhone 相機 / Safari 可能沿用既有分頁，只把 #sign=token 換成新 token，
-   不會重新建立新頁面。監聽 hashchange；若偵測到 token 已更換，
-   直接重新載入目前 URL，確保上一筆 completed/cancelled/claim 狀態全部清空。
+/* Web V4.2.27｜QR 新交易分頁版
+   iPhone 相機 / Safari 可能沿用既有分頁，只把 #sign=token 換成新 token。
+   本版偵測到不同 token 時：
+   1. 立即把舊分頁網址恢復成原 token，不覆蓋上一筆交易頁。
+   2. 顯示「開啟新交易分頁」提示。
+   3. 由使用者點擊後，以 target=_blank 開啟新的 QR 簽署頁。
+   使用者點擊屬於瀏覽器允許的新分頁操作，可避免 Safari 彈窗阻擋。
    不修改 QR DB 流程、不修改 Signature Core。 */
 let activeCustomerSignToken=null;
+let pendingCustomerSignToken=null;
+
+function buildCustomerSignUrl(token){
+  const u=new URL(location.href);
+  u.hash='sign='+encodeURIComponent(token);
+  return u.href;
+}
+
+function restoreActiveCustomerSignUrl(){
+  if(!activeCustomerSignToken)return;
+  const u=new URL(location.href);
+  u.hash='sign='+encodeURIComponent(activeCustomerSignToken);
+  history.replaceState(null,'',u.href);
+}
+
+function closeNewQrTabPrompt(){
+  const el=document.getElementById('newQrTabPrompt');
+  if(el)el.remove();
+  pendingCustomerSignToken=null;
+}
+
+function showNewQrTabPrompt(nextToken){
+  if(!nextToken || nextToken===activeCustomerSignToken)return;
+
+  pendingCustomerSignToken=nextToken;
+  restoreActiveCustomerSignUrl();
+
+  const old=document.getElementById('newQrTabPrompt');
+  if(old)old.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='newQrTabPrompt';
+  overlay.className='overlay';
+  overlay.innerHTML=`
+    <div class="modal" style="max-width:520px">
+      <div class="title" style="font-size:19px">偵測到新的回收交易</div>
+      <div class="notice info" style="font-size:14px;line-height:1.75">
+        目前這一頁會保留上一筆交易，不會被新的 QR Code 覆蓋。<br>
+        請點下方按鈕，以新分頁開啟新的電子簽署。
+      </div>
+      <div class="actions" style="margin-top:14px;justify-content:flex-end">
+        <button type="button" class="btn light" id="cancelNewQrTabBtn">保留目前頁面</button>
+        <a class="btn primary" id="openNewQrTabBtn"
+           href="${buildCustomerSignUrl(nextToken)}"
+           target="_blank"
+           rel="noopener noreferrer"
+           style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">
+          開啟新交易分頁
+        </a>
+      </div>
+      <div class="sub" style="margin-top:10px;line-height:1.55">
+        ※ iPhone / Safari 是否直接建立新分頁由瀏覽器控制；由此按鈕開啟可避免一般彈出視窗限制。
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  document.getElementById('cancelNewQrTabBtn')?.addEventListener('click',closeNewQrTabPrompt);
+  document.getElementById('openNewQrTabBtn')?.addEventListener('click',()=>{
+    setTimeout(closeNewQrTabPrompt,120);
+  });
+}
+
 function bootByCurrentRoute(){
   const token=checkHashSign();
   if(token){
@@ -6591,12 +6657,15 @@ function bootByCurrentRoute(){
     boot();
   }
 }
+
 window.addEventListener('hashchange',()=>{
   const nextToken=checkHashSign();
+
   if(nextToken && activeCustomerSignToken && nextToken!==activeCustomerSignToken){
-    location.reload();
+    showNewQrTabPrompt(nextToken);
     return;
   }
+
   if(nextToken && !activeCustomerSignToken){
     location.reload();
   }
