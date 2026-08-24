@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.8</title>
+<title>創宇新機回收管理系統｜Web V4.3.9</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -3059,7 +3059,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.8';
+const APP_VERSION='Web V4.3.9';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4755,38 +4755,28 @@ async function signedImageToDataUrl(url){
  });
 }
 
-function normalizeFormalPdfCanvasToGoldenReference(sourceCanvas){
-  // Golden Reference = 使用者確認最理想的 V4.3.1 PDF。
-  // 該 PDF 的 html2canvas 原始影像為 1588×2246，
-  // 可見文件寬度約 1468px（左右各約 60px）。
-  //
-  // 某些 Safari / Browser 狀態會把整份 DOM 等比例縮成約 75.5%，
-  // 但 Canvas 本身仍維持 1588×2246，造成整張文件縮在左上角。
-  // 此函式只修正「整張 raster capture 的全域比例」，
-  // 完全不改任何 HTML / CSS / 欄寬 / 列高 / 字級。
-  if(!sourceCanvas?.width || !sourceCanvas?.height) return sourceCanvas;
+function measureFormalPdfGlobalScale(canvas){
+  if(!canvas?.width || !canvas?.height)return 1;
 
-  const ctx=sourceCanvas.getContext('2d',{willReadFrequently:true});
-  if(!ctx) return sourceCanvas;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  if(!ctx)return 1;
 
   let imageData;
   try{
-    imageData=ctx.getImageData(0,0,sourceCanvas.width,sourceCanvas.height);
+    imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
   }catch(e){
-    safeProductionError('pdf_canvas_measure',e,'PDF_CANVAS_MEASURE_ERROR');
-    return sourceCanvas;
+    safeProductionError('pdf_probe_measure',e,'PDF_PROBE_ERROR');
+    return 1;
   }
 
   const d=imageData.data;
-  const w=sourceCanvas.width, h=sourceCanvas.height;
+  const w=canvas.width,h=canvas.height;
   let minX=w,minY=h,maxX=-1,maxY=-1;
+  const step=Math.max(1,Math.round(w/800));
 
-  // 每 2px 取樣即可辨識整張文件 bbox，速度比逐 pixel 快很多。
-  const step=2;
   for(let y=0;y<h;y+=step){
     for(let x=0;x<w;x+=step){
       const i=(y*w+x)*4;
-      // 非接近白色即視為文件內容。
       if(d[i]<245 || d[i+1]<245 || d[i+2]<245){
         if(x<minX)minX=x;
         if(x>maxX)maxX=x;
@@ -4796,36 +4786,20 @@ function normalizeFormalPdfCanvasToGoldenReference(sourceCanvas){
     }
   }
 
-  if(maxX<minX || maxY<minY) return sourceCanvas;
+  if(maxX<minX || maxY<minY)return 1;
 
   const visibleW=maxX-minX+1;
-  const targetVisibleW=1468; // Golden V4.3.1 reference at 1588px canvas width.
-  let factor=targetVisibleW/visibleW;
+  const visibleFraction=visibleW/w;
 
-  // 正常 V4.3.1 本來就接近 1.0，不做任何處理。
-  // 只有全域縮放明顯異常時才校正。
+  // 使用者確認的 V4.3.1 Golden PDF：
+  // 可見文件 bbox 寬 1468 / Canvas 1588 = 0.924433...
+  const goldenFraction=1468/1588;
+  const factor=goldenFraction/visibleFraction;
+
   if(!Number.isFinite(factor) || factor<1.08 || factor>1.45){
-    return sourceCanvas;
+    return 1;
   }
-
-  const out=document.createElement('canvas');
-  out.width=w;
-  out.height=h;
-  const octx=out.getContext('2d');
-  if(!octx)return sourceCanvas;
-
-  octx.fillStyle='#fff';
-  octx.fillRect(0,0,w,h);
-
-  // 錯誤輸出與 Golden Reference 的 bbox 顯示縮放原點就是左上角，
-  // 因此直接從 (0,0) 放大即可還原原版型，不重新排版。
-  octx.drawImage(
-    sourceCanvas,
-    0,0,w,h,
-    0,0,w*factor,h*factor
-  );
-
-  return out;
+  return factor;
 }
 
 async function createFormalPdfFromRecord(rec,signatureUrl){
@@ -4866,31 +4840,73 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    await waitForPrintAssets(7000);
+   if(document.fonts?.ready){
+     try{await document.fonts.ready}catch(e){}
+   }
    syncLegacyMasterSplit(root);
    await new Promise(resolve=>setTimeout(resolve,120));
 
-   const canvas=await window.html2canvas(page,{
-     scale:2,
-     useCORS:true,
-     allowTaint:false,
-     backgroundColor:'#ffffff',
-     logging:false,
-     imageTimeout:7000,
-     windowWidth:794,
-     width:794,
-     height:1123,
-     scrollX:0,
-     scrollY:0
-   });
+   // V4.3.9：
+   // 先用低成本 probe 判斷 Safari / Browser 是否把整份 PDF DOM 全域縮小。
+   // 如果有縮小，不再把「已經渲染好的點陣圖」放大，
+   // 而是先把 DOM 恢復比例，再重新由 html2canvas 畫一次。
+   let globalScale=1;
+   try{
+     const probeCanvas=await window.html2canvas(page,{
+       scale:1,
+       useCORS:true,
+       allowTaint:false,
+       backgroundColor:'#ffffff',
+       logging:false,
+       imageTimeout:7000,
+       windowWidth:794,
+       width:794,
+       height:1123,
+       scrollX:0,
+       scrollY:0
+     });
+     globalScale=measureFormalPdfGlobalScale(probeCanvas);
+   }catch(e){
+     safeProductionError('pdf_scale_probe',e,'PDF_PROBE_ERROR');
+     globalScale=1;
+   }
+
+   const previousTransform=page.style.transform;
+   const previousTransformOrigin=page.style.transformOrigin;
+
+   if(globalScale!==1){
+     page.style.transformOrigin='0 0';
+     page.style.transform=`scale(${globalScale})`;
+     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   }
+
+   let canvas;
+   try{
+     // 最終 PDF 一律重新從 DOM 高品質渲染。
+     // scale 2 保持 V4.3.1 原本 PDF 清晰度；沒有任何 raster 二次放大。
+     canvas=await window.html2canvas(page,{
+       scale:2,
+       useCORS:true,
+       allowTaint:false,
+       backgroundColor:'#ffffff',
+       logging:false,
+       imageTimeout:7000,
+       windowWidth:794,
+       width:794,
+       height:1123,
+       scrollX:0,
+       scrollY:0
+     });
+   }finally{
+     page.style.transform=previousTransform;
+     page.style.transformOrigin=previousTransformOrigin;
+   }
 
    if(!canvas?.width||!canvas?.height)throw new Error('PDF_RENDER_EMPTY');
 
-   // V4.3.8：不改 DOM/CSS，只在 capture 完成後校正 Safari / Browser 全域縮放異常。
-   const normalizedCanvas=normalizeFormalPdfCanvasToGoldenReference(canvas);
-
    const {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-   const imgData=normalizedCanvas.toDataURL('image/jpeg',0.96);
+   const imgData=canvas.toDataURL('image/jpeg',0.96);
 
    pdf.setProperties({
      title:`Formal Recycle Declaration ${rec.record_no}`,
