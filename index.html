@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.19</title>
+<title>創宇新機回收管理系統｜Web V4.3.20</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2611,7 +2611,7 @@ body.qr-transaction-locked #qrSignSection{
 
 <style id="v4312-pdf-font-hierarchy-patch">
 /* =========================================================
-   Web V4.3.19｜PDF 字體可讀性＋全域光學置中版
+   Web V4.3.20｜PDF 高解析文字渲染版
    僅作用於正式 PDF Capture。
    不改欄寬、列高、padding、grid、zoom、html2canvas、A4 比例。
    ========================================================= */
@@ -3100,7 +3100,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.19';
+const APP_VERSION='Web V4.3.20';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4956,7 +4956,7 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
    const {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-   const imgData=canvas.toDataURL('image/jpeg',0.96);
+   const imgData=canvas.toDataURL('image/png');
 
    pdf.setProperties({
      title:`Formal Recycle Declaration ${rec.record_no}`,
@@ -4967,7 +4967,7 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
    });
 
    // V4.3.1：capture 直接固定為 A4 比例，避免置中縮放後產生過多上下留白。
-   pdf.addImage(imgData,'JPEG',0,0,210,297,undefined,'FAST');
+   pdf.addImage(imgData,'PNG',0,0,210,297);
    pdf.save(formalPdfFileName(rec));
    return true;
  }finally{
@@ -7001,30 +7001,30 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 </script>
 
 
-<style id="v4319-pdf-readable-optical-center">
+<style id="v4320-pdf-hires-text-render">
 /* =========================================================
-   Web V4.3.19｜PDF 字體可讀性＋全域光學置中
-   基底：V4.3.18 單一字體規格
+   Web V4.3.20｜PDF 高解析文字渲染
+   基底：V4.3.19
    原則：
-   1. 字級只微放大約 3～5%，不破壞既有固定列高。
-   2. Safari/html2canvas 中文字框數學置中但視覺偏下，
-      以「上少、下多」的對稱差 2px padding 做光學修正。
-   3. 禁止 transform / position top 修字，避免 glyph 再次失真。
-   4. 不改欄寬、列高、Zoom、Capture、A4、商品名稱換行。
+   1. 主要字級全部使用整數 px。
+   2. line-height 使用整數 px，減少 Safari + Zoom + html2canvas 小數 rounding。
+   3. 保留 V4.3.19 光學置中，不使用 transform / position 位移。
+   4. 不改欄寬、列高、Zoom、Capture、A4。
    ========================================================= */
 
 .legacy-print-page.pdf-capture .legacy-doc{
   font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
   font-synthesis:none!important;
   font-kerning:normal!important;
+  text-rendering:geometricPrecision!important;
 }
 
-/* ---------- 上半部主表：統一基本字體 ---------- */
+/* ---------- 上半部主表 ---------- */
 .legacy-print-page.pdf-capture .legacy-master-table{
   font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-size:9.6px!important;
+  font-size:10px!important;
   font-weight:400!important;
-  line-height:1.16!important;
+  line-height:12px!important;
   letter-spacing:0!important;
 }
 
@@ -7036,56 +7036,55 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
   font-synthesis:none!important;
 }
 
-/* 光學置中：
-   原本上下 4px → 上 3px / 下 5px，總 padding 不變，
-   所以不改列高，只把視覺字心往上約 1px。 */
+/* V4.3.19 光學置中保留：
+   總 padding 不變，只讓字心視覺上移約 1px */
 .legacy-print-page.pdf-capture .legacy-master-table td:not(.legacy-imei-cell):not(.legacy-unit-note):not(.legacy-scan-cell),
 .legacy-print-page.pdf-capture .legacy-master-table th:not(.bar){
   padding-top:3px!important;
   padding-bottom:5px!important;
 }
 
-/* 一般資料值：微放大 */
+/* 一般資料 */
 .legacy-print-page.pdf-capture .legacy-master-table td:not(.lab):not(.amount-val):not(.legacy-imei-cell):not(.legacy-scan-cell){
-  font-size:9.6px!important;
+  font-size:10px!important;
   font-weight:400!important;
-  line-height:1.16!important;
+  line-height:12px!important;
 }
 
-/* 一般淺藍標題：微放大但不再加粗 */
+/* 一般標題 */
 .legacy-print-page.pdf-capture .legacy-master-table .lab{
-  font-size:9.5px!important;
+  font-size:10px!important;
   font-weight:600!important;
-  line-height:1.10!important;
+  line-height:11px!important;
   text-align:center!important;
   vertical-align:middle!important;
   letter-spacing:0!important;
 }
 
-/* 右上 mini 標題：只微增，避免窄格溢出 */
+/* 右上 mini 標題 */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-mini-head{
-  font-size:8.5px!important;
+  font-size:8px!important;
   font-weight:600!important;
-  line-height:1.10!important;
+  line-height:10px!important;
   white-space:nowrap!important;
   padding-left:2px!important;
   padding-right:2px!important;
 }
 
-/* 藍底主標題：微放大，並同樣做 1px 光學上移 */
+/* 藍底主標題 */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-master-left-title,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-master-right-title,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-seller-bar{
   font-size:10px!important;
   font-weight:700!important;
-  line-height:1.12!important;
+  line-height:12px!important;
   letter-spacing:0!important;
   vertical-align:middle!important;
   padding-top:0!important;
   padding-bottom:2px!important;
 }
 
-/* 商品名稱：固定同一尺寸，長品名靠 <wbr>，不靠縮字 */
+/* 商品名稱：固定整數字級，不再出現小數 glyph rounding */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-md,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-product-fit.fit-sm,
@@ -7095,9 +7094,9 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-sm,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-goods-fit.fit-xs{
   font-family:inherit!important;
-  font-size:9.4px!important;
+  font-size:9px!important;
   font-weight:400!important;
-  line-height:1.18!important;
+  line-height:11px!important;
   letter-spacing:0!important;
   white-space:normal!important;
   overflow-wrap:normal!important;
@@ -7108,44 +7107,44 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-id-cell,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-address-cell,
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-center{
-  font-size:9.6px!important;
+  font-size:10px!important;
   font-weight:400!important;
-  line-height:1.16!important;
+  line-height:12px!important;
   letter-spacing:0!important;
 }
 
-/* 金額保留重點，但同步做光學中心 */
+/* 金額 */
 .legacy-print-page.pdf-capture .legacy-master-table .amount-lab{
-  font-size:9.5px!important;
+  font-size:10px!important;
   font-weight:700!important;
-  line-height:1.10!important;
+  line-height:11px!important;
   vertical-align:middle!important;
 }
 .legacy-print-page.pdf-capture .legacy-master-table .amount-val{
   font-family:inherit!important;
   font-size:12px!important;
   font-weight:700!important;
-  line-height:1.10!important;
+  line-height:14px!important;
   letter-spacing:0!important;
   vertical-align:middle!important;
 }
 
-/* IMEI barcode 本身不移動；只把號碼文字微微往上 */
+/* IMEI 號碼 */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-imei-num{
   font-family:inherit!important;
-  font-size:8.5px!important;
+  font-size:8px!important;
   font-weight:400!important;
-  line-height:1.05!important;
+  line-height:9px!important;
   letter-spacing:0!important;
   margin-top:-2px!important;
 }
 
-/* 法規備註是多行資訊，不強迫單行光學 padding，只提高可讀性 */
+/* 法規備註 */
 .legacy-print-page.pdf-capture .legacy-master-table .legacy-unit-note{
   font-family:inherit!important;
-  font-size:8.35px!important;
+  font-size:8px!important;
   font-weight:400!important;
-  line-height:1.30!important;
+  line-height:10px!important;
   letter-spacing:0!important;
   padding-top:4px!important;
   padding-bottom:6px!important;
@@ -7157,13 +7156,13 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
 }
 .legacy-print-page.pdf-capture .legacy-grade-choice{
   font-family:"PingFang TC","Microsoft JhengHei",Arial,sans-serif!important;
-  font-size:8.9px!important;
+  font-size:9px!important;
   font-weight:400!important;
-  line-height:1.14!important;
+  line-height:11px!important;
   letter-spacing:0!important;
   border:1px solid #a9b8c8!important;
   border-radius:3px!important;
-  padding:3px 3px 5px!important; /* 同樣視覺上移約 1px */
+  padding:3px 3px 5px!important;
   background:#fff!important;
   color:#2b3847!important;
   box-shadow:none!important;
@@ -7181,16 +7180,29 @@ bindStep3AddressForm();renderInspection();updateProductMode();updateGrade();upda
   margin-right:2px!important;
 }
 
-/* ---------- 下方藍色切結標題列 ----------
-   V4.3.12 的正文層級保留，只修標題文字視覺偏下。 */
-.legacy-print-page.pdf-capture .legacy-declare-top-left,
-.legacy-print-page.pdf-capture .legacy-declare-top-right{
+/* ---------- 下方切結藍色標題列 ----------
+   僅把既有小數字級收斂為整數，正文不動。 */
+.legacy-print-page.pdf-capture .legacy-declare-top-left{
+  font-size:8px!important;
+  font-weight:800!important;
+  line-height:10px!important;
   padding-top:0!important;
   padding-bottom:2px!important;
   align-items:center!important;
 }
-
-/* 正文不做位置偏移，避免多行契約文字重新排版。 */
+.legacy-print-page.pdf-capture .legacy-declare-top-left .read{
+  font-size:8px!important;
+  font-weight:800!important;
+  line-height:10px!important;
+}
+.legacy-print-page.pdf-capture .legacy-declare-top-right{
+  font-size:8px!important;
+  font-weight:800!important;
+  line-height:10px!important;
+  padding-top:0!important;
+  padding-bottom:2px!important;
+  align-items:center!important;
+}
 </style>
 </body>
 </html>
