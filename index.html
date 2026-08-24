@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbmesuwyhbdmyyywkadi.supabase.co; connect-src 'self' https://zbmesuwyhbdmyyywkadi.supabase.co wss://zbmesuwyhbdmyyywkadi.supabase.co; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; upgrade-insecure-requests">
-<title>創宇新機回收管理系統｜Web V4.3.0</title>
+<title>創宇新機回收管理系統｜Web V4.3.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -818,6 +818,32 @@ body.signing-lock input,body.signing-lock textarea,body.signing-lock select{
 .legacy-print-page .legacy-sign-img{max-width:28mm;height:19mm}
 .legacy-print-page .legacy-sign-space{height:19mm}
 .legacy-print-page .legacy-footer{margin-top:3.2mm;font-size:6.2pt}
+
+/* Web V4.3.1｜正式 PDF 留白優化：capture 時強制 A4 比例，減少上下空白 */
+.legacy-print-page.pdf-capture{
+  width:794px;
+  min-height:1123px;
+  display:flex;
+  flex-direction:column;
+  background:#fff;
+}
+.legacy-print-page.pdf-capture .legacy-doc{
+  width:794px;
+  max-width:none;
+  min-height:1123px;
+  padding:10mm 8mm 5mm;
+  border:0;
+  box-shadow:none;
+  display:flex;
+  flex-direction:column;
+}
+.legacy-print-page.pdf-capture .legacy-head{
+  margin-bottom:1.6mm;
+}
+.legacy-print-page.pdf-capture .legacy-footer{
+  margin-top:auto;
+  padding-top:2mm;
+}
 
 
 /* V3.1.7.10.27.2｜只修首段列高微調版 */
@@ -3033,7 +3059,7 @@ body.qr-transaction-locked #qrSignSection{
 
 
 <script>
-const APP_VERSION='Web V4.3.0';
+const APP_VERSION='Web V4.3.1';
 const APP_VERSION_LABEL=APP_VERSION.replace(/^Web\s+/,'');
 const $=id=>document.getElementById(id);
 function syncAppVersionUI(){
@@ -4743,22 +4769,26 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
  const root=$('printSheet');
  const page=root?.querySelector('.legacy-print-page');
- if(!root||!page)throw new Error('PDF_TEMPLATE_NOT_READY');
+ const doc=page?.querySelector('.legacy-doc');
+ if(!root||!page||!doc)throw new Error('PDF_TEMPLATE_NOT_READY');
  if(root.querySelector('.legacy-id-attachments')){
    throw new Error('PDF_ID_ATTACHMENT_GUARD');
  }
 
  const previousStyle=root.getAttribute('style');
+ const hadCaptureClass=page.classList.contains('pdf-capture');
  try{
    root.style.display='block';
    root.style.position='fixed';
    root.style.left='-12000px';
    root.style.top='0';
-   root.style.width='920px';
-   root.style.maxWidth='920px';
+   root.style.width='794px';
+   root.style.maxWidth='794px';
    root.style.background='#fff';
    root.style.zIndex='-9999';
    root.style.pointerEvents='none';
+
+   if(!hadCaptureClass)page.classList.add('pdf-capture');
 
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    await waitForPrintAssets(7000);
@@ -4772,7 +4802,9 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      backgroundColor:'#ffffff',
      logging:false,
      imageTimeout:7000,
-     windowWidth:1200,
+     windowWidth:794,
+     width:794,
+     height:1123,
      scrollX:0,
      scrollY:0
    });
@@ -4781,15 +4813,6 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
 
    const {jsPDF}=window.jspdf;
    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-   const pageW=210,pageH=297,margin=5,maxW=pageW-margin*2,maxH=pageH-margin*2;
-   let imgW=maxW;
-   let imgH=canvas.height*imgW/canvas.width;
-   if(imgH>maxH){
-     imgH=maxH;
-     imgW=canvas.width*imgH/canvas.height;
-   }
-   const x=(pageW-imgW)/2;
-   const y=(pageH-imgH)/2;
    const imgData=canvas.toDataURL('image/jpeg',0.96);
 
    pdf.setProperties({
@@ -4799,10 +4822,13 @@ async function createFormalPdfFromRecord(rec,signatureUrl){
      creator:`Smart mobile Recycle System ${APP_VERSION}`,
      keywords:`${rec.record_no}, recycle, formal-pdf, no-id`
    });
-   pdf.addImage(imgData,'JPEG',x,y,imgW,imgH,undefined,'FAST');
+
+   // V4.3.1：capture 直接固定為 A4 比例，避免置中縮放後產生過多上下留白。
+   pdf.addImage(imgData,'JPEG',0,0,210,297,undefined,'FAST');
    pdf.save(formalPdfFileName(rec));
    return true;
  }finally{
+   if(!hadCaptureClass)page.classList.remove('pdf-capture');
    if(previousStyle===null)root.removeAttribute('style');
    else root.setAttribute('style',previousStyle);
  }
